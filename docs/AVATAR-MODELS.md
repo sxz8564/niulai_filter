@@ -117,7 +117,24 @@ Put the file in `models/avatars/` and add an entry to
 | `morphs` | no | Explicit morph names, when auto-matching picks the wrong target |
 | `nodes` | no | Explicit node names for `jaw`, `earLeft`, `earRight` |
 
-## 6. Testing a model
+## 6. Commissioning and checking a model
+
+To have someone else — or an AI 3D tool — build the model, hand them
+[`MODEL-BRIEF.md`](MODEL-BRIEF.md). It restates this contract as a
+self-contained prompt, with a character section to fill in and a self-check
+list.
+
+When a model comes back, check it before wiring it in:
+
+```bash
+node tools/validate-avatar.mjs path/to/head.glb
+```
+
+It reports bounds, triangle count, materials and which expression channels it
+found, and exits non-zero for anything that would stop the model loading —
+compression, external textures, an oversized file.
+
+## 7. Testing a model
 
 Iterate without touching the registry:
 
@@ -142,7 +159,7 @@ Then start the camera and check the fit against your own face.
 Once it is right, copy the file into `models/avatars/`, add its registry entry,
 and reload the extension at `chrome://extensions`.
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 | Symptom | Cause |
 | --- | --- |
@@ -155,7 +172,7 @@ and reload the extension at `chrome://extensions`.
 | Black or untextured | Textures referenced externally. Re-export with images embedded |
 | Frame rate drops | Over budget (§3). Decimate the mesh and shrink textures |
 
-## 8. Exporting from Blender
+## 9. Exporting from Blender
 
 File → Export → **glTF 2.0 (.glb/.gltf)**, then:
 
@@ -168,7 +185,7 @@ File → Export → **glTF 2.0 (.glb/.gltf)**, then:
 
 Shape key names come across verbatim, so name them per §4 before exporting.
 
-## 9. What is not supported
+## 10. What is not supported
 
 - Draco / Meshopt compression
 - Skeletal animation clips (the head is posed by face tracking, not played back)

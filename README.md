@@ -133,9 +133,20 @@ exported from most pipelines animates without configuration.
 
 **[docs/AVATAR-MODELS.md](docs/AVATAR-MODELS.md) is the full specification**:
 format, orientation, budget, rig naming, registry fields and troubleshooting.
-Hand it to whoever makes the model. A conforming example is committed at
-`docs/reference/example-head.glb`, regenerated with
-`node tools/make-example-avatar.mjs`.
+
+To commission a model, hand [docs/MODEL-BRIEF.md](docs/MODEL-BRIEF.md) to a
+modeller or a 3D-generating agent — it restates the contract as a
+self-contained prompt with a character section to fill in. Check what comes
+back before wiring it in:
+
+```bash
+npm run validate:avatar -- path/to/head.glb
+```
+
+The validator reports bounds, triangle count and which expression channels it
+found, and fails on anything that would stop the model loading. A conforming
+example is committed at `docs/reference/example-head.glb`
+(`npm run example:avatar` regenerates it).
 
 ### Adding an animal
 

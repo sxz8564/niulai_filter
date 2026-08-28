@@ -8,7 +8,9 @@
     "test:pose": "node tools/pose-test.mjs",
     "test:smoke": "node tools/smoke-test.mjs",
     "icons": "node tools/make-icons.mjs",
-    "build:three": "esbuild tools/three-entry/entry.js --bundle --minify --format=iife --global-name=THREE --outfile=vendor/three/three.iife.js --legal-comments=none"
+    "build:three": "esbuild tools/three-entry/entry.js --bundle --minify --format=iife --global-name=THREE --outfile=vendor/three/three.iife.js --legal-comments=none",
+    "validate:avatar": "node tools/validate-avatar.mjs",
+    "example:avatar": "node tools/make-example-avatar.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.0",
