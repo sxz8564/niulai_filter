@@ -135,9 +135,9 @@ exported from most pipelines animates without configuration.
 format, orientation, budget, rig naming, registry fields and troubleshooting.
 
 To commission a model, hand [docs/MODEL-BRIEF.md](docs/MODEL-BRIEF.md) to a
-modeller or a 3D-generating agent — it restates the contract as a
-self-contained prompt with a character section to fill in. Check what comes
-back before wiring it in:
+modeller or a 3D-generating agent alongside your own description of the
+character — the brief covers the file requirements only. Check what comes back
+before wiring it in:
 
 ```bash
 npm run validate:avatar -- path/to/head.glb

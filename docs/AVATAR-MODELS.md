@@ -121,8 +121,8 @@ Put the file in `models/avatars/` and add an entry to
 
 To have someone else — or an AI 3D tool — build the model, hand them
 [`MODEL-BRIEF.md`](MODEL-BRIEF.md). It restates this contract as a
-self-contained prompt, with a character section to fill in and a self-check
-list.
+self-contained prompt covering the file requirements only; pair it with your
+own description of the character.
 
 When a model comes back, check it before wiring it in:
 
