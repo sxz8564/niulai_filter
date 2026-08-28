@@ -17,8 +17,6 @@ export {
   TorusGeometry,
   LatheGeometry,
   BufferGeometry,
-  Float32BufferAttribute,
-  BufferAttribute,
   AmbientLight,
   HemisphereLight,
   DirectionalLight,

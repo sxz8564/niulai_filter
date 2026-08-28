@@ -17,8 +17,6 @@ const browser = await chromium.launch({ args: ['--no-sandbox', '--enable-unsafe-
 const page = await browser.newPage();
 await page.addScriptTag({ content: readFileSync(join(root, 'vendor/three/three.iife.js'), 'utf8') });
 await page.addScriptTag({ content: readFileSync(join(root, 'src/core/animals.js'), 'utf8') });
-await page.addScriptTag({ content: readFileSync(join(root, 'src/core/niulai-shape.js'), 'utf8') });
-await page.addScriptTag({ content: readFileSync(join(root, 'src/core/niulai-model.js'), 'utf8') });
 await page.addScriptTag({ content: readFileSync(join(root, 'src/core/animals3d.js'), 'utf8') });
 
 const dataUrl = await page.evaluate(() => {

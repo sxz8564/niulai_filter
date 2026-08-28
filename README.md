@@ -126,20 +126,6 @@ for parts the generic builder has no concept of. The flat vector art in
 The Three.js bundle in `vendor/three/` is built from `tools/three-entry/` with
 `npm run build:three`; only the classes the renderer uses are pulled in.
 
-Niulai is the exception to all of the above: its head is not modelled from
-numbers at all. `tools/extract-niulai.py` scans the three-view reference in
-`docs/reference/` and writes `src/core/niulai-shape.js` — a half-width per
-height from the front view, a depth range per height from the side view, the
-muzzle outline, feature positions, and a sampled palette.
-`src/core/niulai-model.js` lofts those cross-sections into a surface, so the
-silhouette matches the reference head-on and in profile by construction, and
-paints the muzzle onto it from the measured pale region. Re-run the extractor
-after changing the reference:
-
-```bash
-python3 tools/extract-niulai.py   # needs Pillow
-```
-
 ## Privacy
 
 Everything runs locally. The camera frames go to a canvas in your own browser,

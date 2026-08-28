@@ -55,8 +55,6 @@
       "js": [
         "vendor/three/three.iife.js",
         "src/core/animals.js",
-        "src/core/niulai-shape.js",
-        "src/core/niulai-model.js",
         "src/core/animals3d.js",
         "src/core/compositor.js",
         "src/page/patch.js"
