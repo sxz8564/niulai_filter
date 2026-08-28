@@ -15,7 +15,7 @@
     /** Master switch. When false the camera is passed through untouched. */
     enabled: true,
     /** Id of the animal in the animal registry. */
-    animal: 'shiba',
+    animal: 'niulai',
     /** Head width as a multiple of the detected face width. */
     size: 1.62,
     /** Offset from the detected face centre, in head widths. */

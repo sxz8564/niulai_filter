@@ -12,9 +12,9 @@ frames on a canvas, and hands the meeting the filtered stream instead.
 
 ## What it does
 
-- **12 animals** — shiba, cat, fox, wolf, panda, bear, koala, tiger, bunny,
-  pig, frog and monkey — drawn as vectors, so they stay sharp at any camera
-  resolution.
+- **13 animals** — Niulai the orange calf, plus shiba, cat, fox, wolf, panda,
+  bear, koala, tiger, bunny, pig, frog and monkey — drawn as vectors, so they
+  stay sharp at any camera resolution.
 - **Real face tracking** with MediaPipe Face Landmarker: the head follows your
   position, size and tilt, turns with you, and its mouth, eyes and brows follow
   your own.
@@ -101,7 +101,7 @@ Three details are load-bearing:
 npm install          # Playwright, for the dev tools only
 npm run test:pose    # head-pose geometry checks, no camera needed
 npm run test:smoke   # loads the extension in Chromium with a fake camera
-npm run icons        # regenerates icons/*.png from the shiba renderer
+npm run icons        # regenerates icons/*.png from the Niulai renderer
 ```
 
 `tools/smoke-test.mjs` is the useful one: it loads the unpacked extension,

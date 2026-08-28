@@ -174,8 +174,9 @@
       ctx.lineWidth = 0.008;
       ctx.stroke();
       var px = x + p.yaw * r * 0.34;
-      fillEllipse(ctx, px, y + p.pitch * ry * 0.2, r * 0.46, Math.min(ry * 0.92, r * 0.46), 0, spec.eye);
-      fillEllipse(ctx, px - r * 0.16, y - ry * 0.26, r * 0.14, r * 0.14 * open, 0, 'rgba(255,255,255,0.92)');
+      var iris = r * (E.iris || 0.46);
+      fillEllipse(ctx, px, y + p.pitch * ry * 0.2, iris, Math.min(ry * 0.92, iris), 0, spec.eye);
+      fillEllipse(ctx, px - iris * 0.34, y - ry * 0.3, r * 0.16, r * 0.16 * open, 0, 'rgba(255,255,255,0.92)');
       return;
     }
 
@@ -421,6 +422,7 @@
 
     drawEar(ctx, spec, -1, p);
     drawEar(ctx, spec, 1, p);
+    if (spec.behind) spec.behind(ctx, spec, p);
     drawHead(ctx, spec, p);
 
     // Facial features shift with head turn to fake parallax.
@@ -487,6 +489,63 @@
   /* --------------------------------------------------------------- animals */
 
   var SPECS = [
+    base({
+      id: 'niulai', name: 'Niulai', emoji: '\ud83d\udc2e',
+      fur: '#ef6a1c', furLight: '#fb8f40', furShade: '#c14e10',
+      inner: '#e8a48c', muzzleColor: '#f3d7bf', noseColor: '#f8e3d1',
+      mouthColor: '#8a4a24', outline: '#bd4a0d',
+      eye: '#5a3218', eyeWhite: '#fffaf4',
+      head: { w: 1.04, h: 1.02, jaw: 0.88, chin: 0.60 },
+      // Cow ears sit high and stick straight out to the sides.
+      ear: { type: 'triangle', w: 0.30, h: 0.40, x: 0.50, y: -0.22, tilt: -1.55, inner: 0.56, swing: 0.7 },
+      eyes: { x: 0.215, y: -0.065, r: 0.086, aspect: 1, white: true, iris: 0.64 },
+      brows: { w: 0.19, h: 0.04, weight: 0.04, color: '#7d3a16' },
+      muzzle: { w: 0.74, h: 0.46, y: 0.30 },
+      nose: { w: 0.17, h: 0.09, y: 0.215, type: 'snout' },
+      mouth: { y: 0.37, w: 0.20, depth: 0.055, maxOpen: 0.12 },
+      behind: function (ctx) {
+        // Stubby pale horns, angled out from behind the ears.
+        for (var side = -1; side <= 1; side += 2) {
+          ctx.save();
+          ctx.translate(side * 0.45, 0.02);
+          ctx.rotate(side * 1.45);
+          ctx.beginPath();
+          ctx.moveTo(-0.055, 0.01);
+          ctx.quadraticCurveTo(-0.035, -0.15, 0, -0.20);
+          ctx.quadraticCurveTo(0.035, -0.15, 0.055, 0.01);
+          ctx.closePath();
+          ctx.fillStyle = '#f1e3c6';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(90,50,24,0.25)';
+          ctx.lineWidth = 0.011;
+          ctx.stroke();
+          ctx.restore();
+        }
+      },
+      markings: function (ctx) {
+        // Shaggy forelock across the crown, scalloped along its lower edge.
+        var scallops = 6;
+        var left = -0.62;
+        var right = 0.62;
+        var step = (right - left) / scallops;
+        var hem = -0.38;
+        ctx.beginPath();
+        ctx.moveTo(left, -0.62);
+        ctx.lineTo(right, -0.62);
+        ctx.lineTo(right, hem);
+        for (var i = 0; i < scallops; i++) {
+          var xa = right - i * step;
+          var xb = xa - step;
+          ctx.quadraticCurveTo((xa + xb) / 2, hem + 0.14, xb, hem);
+        }
+        ctx.closePath();
+        ctx.fillStyle = '#cd4d09';
+        ctx.fill();
+        // Pale chin and chest, as on the reference.
+        fillEllipse(ctx, 0, 0.60, 0.40, 0.18, 0, '#f7e8bd');
+      }
+    }),
+
     base({
       id: 'shiba', name: 'Shiba', emoji: '🐕',
       fur: '#e0a45c', furLight: '#f0c087', furShade: '#b97f39',
@@ -612,7 +671,7 @@
       eyes: { x: 0.215, y: -0.04, r: 0.062, aspect: 1, pupil: 'round' },
       muzzle: null,
       nose: { w: 0.115, h: 0.135, y: 0.14, type: 'round' },
-      mouth: { y: 0.31, w: 0.09, depth: 0.045, maxOpen: 0.18 },
+      mouth: { y: 0.30, w: 0.09, depth: 0.045, maxOpen: 0.12 },
       faceExtras: function (ctx) {
         // Fluffy ear tufts poking past the round ears.
         ctx.fillStyle = 'rgba(255,255,255,0.22)';

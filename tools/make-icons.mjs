@@ -1,5 +1,5 @@
 /*
- * Regenerates icons/*.png from the shiba renderer in src/core/animals.js.
+ * Regenerates icons/*.png from the Niulai renderer in src/core/animals.js.
  * The icons are drawn by the same code that draws the filter, so they never
  * drift from the art.
  *
@@ -48,7 +48,7 @@ const icons = await page.evaluate((sizes) => {
     ctx.translate(size / 2, size * 0.56);
     const scale = size * (size <= 32 ? 0.66 : 0.60);
     ctx.scale(scale, scale);
-    NS.animals.draw(ctx, NS.animals.get('shiba'), { jawOpen: 0.1 });
+    NS.animals.draw(ctx, NS.animals.get('niulai'), { jawOpen: 0.1 });
     ctx.restore();
 
     out[size] = canvas.toDataURL('image/png');

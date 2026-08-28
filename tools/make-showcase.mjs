@@ -19,7 +19,7 @@ await page.addScriptTag({ content: readFileSync(join(root, 'src/core/animals.js'
 const dataUrl = await page.evaluate(() => {
   const NS = globalThis.__CritterCam;
   const list = NS.animals.list();
-  const cols = 6;
+  const cols = 7;
   const rows = Math.ceil(list.length / cols);
   const cell = 150;
   const label = 24;
