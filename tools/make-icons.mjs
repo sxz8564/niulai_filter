@@ -48,7 +48,12 @@ const icons = await page.evaluate((sizes) => {
     ctx.roundRect(0, 0, size, size, radius);
     ctx.clip();
     const spec = NS.animals.get('niulai');
-    if (!NS.avatar3d.paintThumb(ctx, spec, size)) {
+    const renderer = NS.avatar3d.sharedRenderer();
+    if (renderer) {
+      // Fill the plate rather than using the picker's roomier framing.
+      const layer = renderer.render(spec, { x: size / 2, y: size * 0.54, size: size * 0.74, roll: 0 }, {}, size, size);
+      ctx.drawImage(layer, 0, 0, size, size);
+    } else {
       ctx.translate(size / 2, size * 0.56);
       const scale = size * (size <= 32 ? 0.66 : 0.60);
       ctx.scale(scale, scale);

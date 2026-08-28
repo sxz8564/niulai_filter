@@ -622,10 +622,10 @@
   var SPECS = [
     base({
       id: 'niulai', name: 'Niulai', emoji: '\ud83d\udc02',
-      fur: '#ef6a15', furLight: '#fb9036', furShade: '#a83c05',
+      fur: '#f5822a', furLight: '#ff9c48', furShade: '#c05a10',
       inner: '#f0dcc0', outline: '#8a3003',
       mouthColor: '#5a2a10', mouthInner: '#5c2018', tongue: '#cf6b7c',
-      eye: '#3b2109', eyeWhite: '#f6ece0',
+      eye: '#221206', eyeWhite: '#efe2d2',
       /*
        * Corrections from the reference, feature by feature:
        *   brows   flat, with a slight frown - not arched
@@ -643,7 +643,7 @@
       brows: null,
       muzzle: null,
       nose: { hidden: true, y: 0.16, h: 0.10, w: 0.1, type: 'round' },
-      mouth: { y: 0.42, w: 0.185, depth: 0.038, maxOpen: 0.10, shade: 'rgba(158,92,52,' },
+      mouth: { y: 0.42, w: 0.185, depth: 0.038, maxOpen: 0.10, shade: 'rgba(176,140,104,' },
       mouthStyle: 'shade',
       philtrum: false,
 
@@ -654,37 +654,47 @@
        */
       model3d: {
         /*
-         * Profile revolved around the vertical axis: narrow at the chin,
-         * widening to the cheeks, domed on top. That taper is the reference's
-         * inverted trapezoid, and it holds from any angle.
+         * Measured off the front and three-quarter reference frames, in head
+         * widths from the head's centre (head 185px wide, 195px tall in the
+         * front frame, so the whole head is only ~1.05x taller than wide):
+         *
+         *   eyes     +/-0.19, y -0.22, about 0.15 across
+         *   brows    +/-0.19, y -0.32, heavy and angled in
+         *   muzzle   half width 0.30, from y -0.08 down to +0.51
+         *   ears     +/-0.46, y -0.19, small - about 0.135 across
+         *
+         * The three-quarter frame is what sets the snout's forward reach; the
+         * front frame alone reads much flatter than the character is.
          */
         skull: {
-          sx: 1.0, sz: 0.86,
+          sx: 1.0, sz: 0.88,
           profile: [
-            [0.00, -0.66], [0.15, -0.645], [0.235, -0.585], [0.275, -0.47],
-            [0.300, -0.32], [0.335, -0.14], [0.400, 0.06], [0.452, 0.24],
-            [0.455, 0.40], [0.395, 0.545], [0.235, 0.635], [0.00, 0.66]
+            [0.00, -0.52], [0.16, -0.505], [0.265, -0.445], [0.330, -0.325],
+            [0.380, -0.165], [0.420, 0.020], [0.442, 0.200], [0.425, 0.360],
+            [0.345, 0.470], [0.190, 0.530], [0.00, 0.552]
           ]
         },
-        snout: { rx: 0.225, ry: 0.30, rz: 0.36, y: 0.20, z: 0.19 },
-        eyes: { x: 0.265, y: -0.20, z: 0.30, r: 0.105, aspect: 0.5, iris: 0.044, irisOffset: 0.85 },
-        ear: { type: 'spike', w: 0.22, h: 0.30, x: 0.40, y: -0.10, z: -0.05, tilt: 1.20, spread: 0.55 },
+        snout: { rx: 0.292, ry: 0.255, rz: 0.305, y: 0.155, z: 0.205 },
+        eyes: { x: 0.192, y: -0.205, z: 0.318, r: 0.098, aspect: 0.76, iris: 0.086, irisOffset: 0.45 },
+        ear: { type: 'spike', w: 0.165, h: 0.235, x: 0.45, y: -0.185, z: -0.04, tilt: 1.52, spread: 0.62 },
         nose: null,
-        brow: { x: 0.265, y: -0.335, z: 0.28, w: 0.235, h: 0.045, d: 0.07, tilt: -0.07, color: '#5e2a08' },
-        jaw: { pivotY: 0.10, maxAngle: 15 * Math.PI / 180 }
+        mouth: null,
+        brow: { x: 0.192, y: -0.355, z: 0.30, w: 0.20, h: 0.05, d: 0.075, tilt: -0.32, color: '#3d1d07' },
+        jaw: { pivotY: 0.10, maxAngle: 14 * Math.PI / 180 }
       },
       build3d: function (three, group, parts, spec, kit) {
-        var skin = kit.material('#dda684', { roughness: 0.62 });
+        var skin = kit.material('#eddfcb', { roughness: 0.66 });
 
-        // The snout runs long: a lower mass extends it toward the chin without
-        // widening it, so the two read as one form rather than stacked balls.
-        var lower = kit.ellipsoid(0.195, 0.20, 0.315, skin);
-        lower.position.set(0, -0.40, 0.175);
-        parts.jaw.add(lower);
+        // Chin mass, overlapping the muzzle enough that the two read as one
+        // form rather than stacked bands.
+        var chin = kit.ellipsoid(0.245, 0.185, 0.275, skin);
+        chin.position.set(0, -0.315, 0.175);
+        parts.jaw.add(chin);
 
-        // Mouth as a change of shade across the snout, not a drawn line.
-        var band = kit.ellipsoid(0.178, 0.05, 0.315, kit.material('#bd7b58', { roughness: 0.75 }));
-        band.position.set(0, -0.36, 0.10);
+        // Mouth as a change of shade across the muzzle, close enough in tone
+        // that it never reads as a drawn line.
+        var band = kit.ellipsoid(0.20, 0.038, 0.29, kit.material('#e0cdb4', { roughness: 0.8 }));
+        band.position.set(0, -0.275, 0.115);
         parts.jaw.add(band);
       },
 
@@ -720,10 +730,10 @@
         ctx.bezierCurveTo(-0.252, 0.37, -0.272, 0.19, -0.262, 0.03);
         ctx.closePath();
         var skin = ctx.createLinearGradient(0, -0.09, 0, 0.66);
-        skin.addColorStop(0, '#dda589');
-        skin.addColorStop(0.32, '#e9bb9b');
-        skin.addColorStop(0.72, '#ecd2ab');
-        skin.addColorStop(1, '#f3e6c0');
+        skin.addColorStop(0, '#e2d2bc');
+        skin.addColorStop(0.32, '#eddfcb');
+        skin.addColorStop(0.72, '#f2e7d6');
+        skin.addColorStop(1, '#f7efe1');
         ctx.fillStyle = skin;
         ctx.fill();
 
@@ -732,8 +742,8 @@
         ctx.save();
         ctx.clip();
         var fade = ctx.createLinearGradient(0, -0.12, 0, 0.24);
-        fade.addColorStop(0, 'rgba(219,101,20,1)');
-        fade.addColorStop(0.35, 'rgba(224,140,84,0.55)');
+        fade.addColorStop(0, 'rgba(240,126,36,1)');
+        fade.addColorStop(0.35, 'rgba(243,166,110,0.55)');
         fade.addColorStop(0.7, 'rgba(228,168,120,0.18)');
         fade.addColorStop(1, 'rgba(230,180,130,0)');
         ctx.fillStyle = fade;

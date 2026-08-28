@@ -172,11 +172,7 @@
       eye.add(iris);
       parts.irises.push(iris);
 
-      var lid = ellipsoid(P.eyes.r * 1.24, Math.max(eyeRy, P.eyes.r * 0.5) * 1.15, P.eyes.r * 0.8, furMat, 22);
-      var lidOpen = eyeRy + P.eyes.r * 1.25;
-      lid.position.set(0, lidOpen, 0);
-      eye.add(lid);
-      parts.lids.push({ mesh: lid, open: lidOpen, closed: eyeRy * 0.1 });
+      parts.lids.push({ group: eye });
 
       group.add(eye);
     }
@@ -349,9 +345,8 @@
         parts.jaw.rotation.x = -(params.jawOpen || 0) * parts.jawPivot.maxAngle;
       }
       for (var i = 0; i < parts.lids.length; i++) {
-        var lid = parts.lids[i];
         var blink = i === 0 ? (params.blinkL || 0) : (params.blinkR || 0);
-        lid.mesh.position.y = lid.open + (lid.closed - lid.open) * blink;
+        parts.lids[i].group.scale.y = 1 - 0.92 * blink;
       }
       for (var e = 0; e < parts.ears.length; e++) {
         var ear = parts.ears[e];
