@@ -110,6 +110,33 @@ checks that the MediaPipe worker starts, that `getUserMedia` is intercepted on
 a real host page, and that the animal head reaches the outgoing stream. It
 writes screenshots to `.smoke/`.
 
+### Using your own 3D model
+
+The extension can render an imported glTF head instead of a built-in animal.
+Drop a `.glb` into `models/avatars/`, add an entry to
+`models/avatars/index.json`, and it appears in the picker.
+
+To iterate without bundling anything, open the live preview page and pick a
+file under **Imported model** — it loads immediately and reports what the
+loader found:
+
+```
+size  1.04 x 1.31 x 0.98  (scaled by 0.962)
+jaw   1 morph target(s)
+blink 1 left, 1 right
+```
+
+The loader measures and re-centres whatever it is given, so a model does not
+have to be authored at a particular scale, and it matches morph targets by
+name against ARKit, Ready Player Me and plain-English conventions — a head
+exported from most pipelines animates without configuration.
+
+**[docs/AVATAR-MODELS.md](docs/AVATAR-MODELS.md) is the full specification**:
+format, orientation, budget, rig naming, registry fields and troubleshooting.
+Hand it to whoever makes the model. A conforming example is committed at
+`docs/reference/example-head.glb`, regenerated with
+`node tools/make-example-avatar.mjs`.
+
 ### Adding an animal
 
 Animals in `src/core/animals.js` are data, not drawing code. Copy an entry in

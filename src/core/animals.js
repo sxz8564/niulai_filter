@@ -1027,6 +1027,26 @@
 
   NS.animals = {
     list: function () { return SPECS; },
+    /**
+     * Adds an imported glTF model to the picker. Imported models render in 3D
+     * only; the flat fallback draws a neutral head so the picker still shows
+     * something when WebGL is unavailable.
+     */
+    registerModel: function (entry) {
+      if (!entry || !entry.id || BY_ID[entry.id]) return null;
+      var spec = base({
+        id: entry.id,
+        name: entry.name || entry.id,
+        model: entry,
+        requires3d: true,
+        fur: entry.tint || '#a9a29a',
+        furLight: entry.tint || '#c3bcb3',
+        furShade: '#7d766e'
+      });
+      SPECS.push(spec);
+      BY_ID[spec.id] = spec;
+      return spec;
+    },
     get: function (id) { return BY_ID[id] || BY_ID.shiba; },
     has: function (id) { return !!BY_ID[id]; },
     draw: drawAnimal,

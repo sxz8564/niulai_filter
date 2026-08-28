@@ -99,6 +99,70 @@
     else detector.detach();
   }
 
+  /* -------------------------------------------------------- avatar models */
+
+  var MODEL_DIR = '../../models/avatars/';
+
+  function describeModel(report, error) {
+    var box = $('modelReport');
+    if (error) {
+      box.textContent = 'Could not load: ' + error;
+      box.hidden = false;
+      return;
+    }
+    if (!report) { box.hidden = true; return; }
+    var m = report.measured;
+    var lines = [
+      'size  ' + m.width + ' x ' + m.height + ' x ' + m.depth + '  (scaled by ' + m.appliedScale + ')',
+      'jaw   ' + (report.channels.jawOpen ? report.channels.jawOpen + ' morph target(s)'
+        : report.nodes.jaw ? 'bone "' + report.nodes.jaw + '"' : 'none - mouth will not move'),
+      'blink ' + (report.channels.blinkLeft + report.channels.blinkRight
+        ? report.channels.blinkLeft + ' left, ' + report.channels.blinkRight + ' right'
+        : 'none - eyes will not blink'),
+      'brow  ' + (report.channels.brow ? report.channels.brow + ' target(s)' : 'none'),
+      'smile ' + (report.channels.smile ? report.channels.smile + ' target(s)' : 'none')
+    ];
+    box.textContent = lines.join('\n');
+    box.hidden = false;
+  }
+
+  /** Registers models listed in models/avatars/index.json. */
+  function loadRegistry() {
+    return fetch(MODEL_DIR + 'index.json')
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (entries) {
+        if (!Array.isArray(entries) || !entries.length) return;
+        NS.avatarModels.registerAll(entries);
+        entries.forEach(function (entry) {
+          fetch(MODEL_DIR + entry.file)
+            .then(function (r) { return r.arrayBuffer(); })
+            .then(function (buf) { NS.avatarModels.provide(entry.id, buf); })
+            .catch(function () { /* reported when selected */ });
+        });
+        buildGrid();
+        apply();
+      })
+      .catch(function () { /* no registry is fine */ });
+  }
+
+  /** Loads a model straight off disk, so authors can iterate without bundling. */
+  function tryModelFile(file) {
+    var id = 'file-' + Date.now().toString(36);
+    file.arrayBuffer().then(function (buffer) {
+      NS.animals.registerModel({ id: id, name: file.name.replace(/\.(glb|gltf)$/i, ''), file: file.name });
+      NS.avatarModels.provide(id, buffer);
+      return NS.avatarModels.parse(buffer, { id: id });
+    }).then(function (built) {
+      describeModel(built.report, null);
+      settings.animal = id;
+      buildGrid();
+      apply();
+      save();
+    }).catch(function (error) {
+      describeModel(null, String(error && error.message || error));
+    });
+  }
+
   /* --------------------------------------------------------------- camera */
 
   function listDevices() {
@@ -240,6 +304,10 @@
     $('mirror').addEventListener('change', function () {
       canvas.classList.toggle('mirrored', $('mirror').checked);
     });
+    $('modelFile').addEventListener('change', function (event) {
+      var file = event.target.files && event.target.files[0];
+      if (file) tryModelFile(file);
+    });
     $('reset').addEventListener('click', function () {
       settings = NS.normalizeSettings({});
       apply();
@@ -255,6 +323,7 @@
     buildGrid();
     bind();
     apply();
+    loadRegistry();
   });
 
   // Keep in step with edits made from the popup while this tab is open.

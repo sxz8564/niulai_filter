@@ -119,6 +119,25 @@
    */
   function buildHead(spec) {
     var three = T();
+
+    if (spec.model && NS.avatarModels) {
+      // Model bytes may not have arrived yet: hand back an empty group now and
+      // fill it in when they do, so no frame is blocked on a download.
+      var shell = new three.Group();
+      var shellParts = { lids: [], ears: [], brows: [], animate: function () {} };
+      NS.avatarModels.request(spec.model.id)
+        .then(function (buffer) { return NS.avatarModels.parse(buffer, spec.model); })
+        .then(function (built) {
+          shell.add(built.group);
+          shellParts.animate = built.parts.animate;
+          NS.avatarModels.lastReport = built.report;
+        })
+        .catch(function (error) {
+          NS.avatarModels.lastError = String(error && error.message || error);
+        });
+      return { group: shell, parts: shellParts };
+    }
+
     var P = proportions(spec);
     var group = new three.Group();
     var parts = { ears: [], lids: [], irises: [], jaw: null, brows: [] };

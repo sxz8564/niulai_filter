@@ -97,6 +97,21 @@ const avatar3d = await preview.evaluate(() => ({
 check('3D avatar renderer starts', avatar3d.supported && avatar3d.renderer,
   `webgl ${avatar3d.supported}, renderer ${avatar3d.renderer}`);
 
+// Imported models: the preview page can read the extension's own files, so the
+// committed example exercises parsing, fitting and rig detection.
+const modelReport = await preview.evaluate(async () => {
+  const NS = globalThis.__CritterCam;
+  const buffer = await (await fetch('../../docs/reference/example-head.glb')).arrayBuffer();
+  const built = await NS.avatarModels.parse(buffer, { id: 'smoke-example' });
+  return built.report;
+}).catch((error) => ({ error: String(error.message || error) }));
+
+check('glTF model imports and fits', !modelReport.error && modelReport.measured &&
+  modelReport.measured.width > 0,
+  modelReport.error || `${modelReport.measured?.width} x ${modelReport.measured?.height}`);
+check('model rig is detected by name', !modelReport.error && modelReport.channels?.jawOpen > 0,
+  modelReport.error || `jawOpen targets: ${modelReport.channels?.jawOpen}`);
+
 /* -------------------------------------- 2. getUserMedia patch on a real host */
 
 const meet = await context.newPage();

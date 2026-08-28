@@ -69,6 +69,17 @@
         </section>
 
         <section class="card block">
+          <div class="block-head"><h2>Imported model</h2></div>
+          <p class="hint">Try a <b>.glb</b> or <b>.gltf</b> head without bundling it. See
+            <a href="https://github.com/sxz8564/niulai_filter/blob/main/docs/AVATAR-MODELS.md">the model spec</a>
+            for what to export.</p>
+          <div class="row">
+            <input type="file" id="modelFile" accept=".glb,.gltf,model/gltf-binary,model/gltf+json">
+          </div>
+          <pre class="report" id="modelReport" hidden></pre>
+        </section>
+
+        <section class="card block">
           <div class="row">
             <label for="render3d">3D avatar</label>
             <label class="switch"><input type="checkbox" id="render3d"><span class="track"></span></label>
@@ -120,6 +131,7 @@
   <script src="../common/store.js"></script>
   <script src="../../vendor/three/three.iife.js"></script>
   <script src="../core/animals.js"></script>
+  <script src="../core/model-loader.js"></script>
   <script src="../core/animals3d.js"></script>
   <script src="../core/compositor.js"></script>
   <script src="../core/detector-client.js"></script>

@@ -171,6 +171,20 @@
     });
   }
 
+  /** Bundled models appear in the picker alongside the built-in animals. */
+  function loadRegistry() {
+    return fetch(chrome.runtime.getURL('models/avatars/index.json'))
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (entries) {
+        if (Array.isArray(entries) && entries.length) {
+          NS.avatarModels.registerAll(entries);
+          buildGrid();
+          reflect();
+        }
+      })
+      .catch(function () { /* no registry is fine */ });
+  }
+
   NS.store.load().then(function (loaded) {
     settings = loaded;
     buildGrid();
@@ -178,5 +192,6 @@
     reflect();
     refreshStatus();
     setInterval(refreshStatus, 1200);
+    loadRegistry();
   });
 })();

@@ -35,7 +35,49 @@
     detector.setFps(settings.detectFps);
     toPage('settings', { settings: settings });
     updateDetectorRunState();
+    ensureModelBytes(settings.animal);
   }
+
+  /* ------------------------------------------------------- avatar models */
+
+  var registry = [];
+  var sentModels = {};
+
+  /*
+   * The page cannot reliably fetch extension URLs - a host page's CSP governs
+   * requests made from its own world - so the bridge reads model files and
+   * passes the bytes across.
+   */
+  function ensureModelBytes(animalId) {
+    var entry = registry.filter(function (e) { return e.id === animalId; })[0];
+    if (!entry || sentModels[entry.id]) return;
+    sentModels[entry.id] = true;
+    fetch(chrome.runtime.getURL('models/avatars/' + entry.file))
+      .then(function (response) {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        return response.arrayBuffer();
+      })
+      .then(function (buffer) {
+        window.postMessage({ ch: CHANNEL, dir: 'ext', type: 'modelData', id: entry.id, buffer: buffer }, '*', [buffer]);
+      })
+      .catch(function (error) {
+        sentModels[entry.id] = false;
+        modelError = entry.id + ': ' + error.message;
+      });
+  }
+
+  var modelError = null;
+
+  fetch(chrome.runtime.getURL('models/avatars/index.json'))
+    .then(function (response) { return response.ok ? response.json() : []; })
+    .then(function (entries) {
+      registry = Array.isArray(entries) ? entries : [];
+      if (registry.length) {
+        toPage('models', { registry: registry });
+        ensureModelBytes(settings.animal);
+      }
+    })
+    .catch(function () { registry = []; });
 
   /** Detection is pure overhead when the mask is off or pinned manually. */
   function shouldDetect() {
@@ -61,6 +103,7 @@
 
     if (msg.type === 'hello') {
       pushSettings();
+      if (registry.length) toPage('models', { registry: registry });
       return;
     }
 
@@ -112,6 +155,7 @@
         cost: Math.round(detector_.cost || 0),
         processed: detector_.processed
       },
+      models: { count: registry.length, error: modelError },
       render: pageStats
     });
     return true;

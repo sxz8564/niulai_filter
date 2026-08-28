@@ -43,6 +43,10 @@
       announcePipelines();
     } else if (msg.type === 'face') {
       compositor.onFace(msg.face || null);
+    } else if (msg.type === 'models') {
+      if (NS.avatarModels) NS.avatarModels.registerAll(msg.registry);
+    } else if (msg.type === 'modelData') {
+      if (NS.avatarModels) NS.avatarModels.provide(msg.id, msg.buffer);
     }
   }, false);
 
