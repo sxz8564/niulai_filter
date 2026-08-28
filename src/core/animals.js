@@ -652,62 +652,15 @@
        * face, and a long snout - so the silhouette reads as the reference's
        * inverted trapezoid from any angle, not just head-on.
        */
-      model3d: {
-        /*
-         * Measured off the three-view turnaround by scanning the front frame.
-         * The head is 180px wide and spans y 76..300, so one head width is
-         * 180px and the origin sits at image y=188. Everything below is in
-         * head widths from that centre:
-         *
-         *   head      1.00 wide x 1.24 tall, widest at the vertical centre
-         *   ears      tips reach +/-0.77, about 32 degrees above horizontal
-         *   eyes      +/-0.22, y -0.147, only 0.117 across - much smaller
-         *             than they look at a glance, and flat (aspect 0.52)
-         *   brows     +/-0.22, y -0.33, 0.106 wide and barely 0.018 thick
-         *   muzzle    0.744 wide x 0.78 tall, centred 0.22 below the origin
-         */
-        skull: {
-          sx: 1.0, sz: 0.90,
-          profile: [
-            [0.00, -0.622], [0.300, -0.600], [0.400, -0.500], [0.447, -0.400],
-            [0.472, -0.250], [0.500, -0.010], [0.490, 0.140], [0.480, 0.240],
-            [0.414, 0.433], [0.339, 0.489], [0.258, 0.545], [0.147, 0.600],
-            [0.00, 0.625]
-          ]
-        },
-        snout: { rx: 0.40, ry: 0.40, rz: 0.42, y: 0.222, z: 0.181 },
-        eyes: { x: 0.22, y: -0.147, z: 0.375, r: 0.064, aspect: 0.52, iris: 0.052, irisOffset: 0.2 },
-        ear: { type: 'leaf', w: 0.20, h: 0.41, x: 0.40, y: -0.10, z: -0.02, tilt: 1.01, spread: 0.34 },
-        nose: null,
-        mouth: null,
-        brow: { x: 0.22, y: -0.33, z: 0.345, w: 0.106, h: 0.019, d: 0.05, tilt: -0.10, color: '#4b4750' },
-        jaw: { pivotY: 0.10, maxAngle: 13 * Math.PI / 180 }
+      /*
+       * The 3D head is lofted from cross-sections measured off the reference
+       * turnaround - see src/core/niulai-model.js and tools/extract-niulai.py.
+       * Nothing about its shape is hand-tuned here.
+       */
+      buildHead3d: function (three, kit) {
+        return globalThis.__CritterCam.buildNiulaiHead(three, kit);
       },
-      build3d: function (three, group, parts, spec, kit) {
-        var skin = kit.material('#f4e2e2', { roughness: 0.66 });
-
-        // Nose bridge, blending the top of the muzzle up toward the eyes.
-        var bridge = kit.ellipsoid(0.145, 0.135, 0.36, skin);
-        bridge.position.set(0, 0.010, 0.145);
-        parts.jaw.add(bridge);
-
-        // Nostrils, small and set into the top of the muzzle.
-        var nostril = kit.material('#d9b6b8', { roughness: 0.7 });
-        for (var n = -1; n <= 1; n += 2) {
-          var hole = kit.ellipsoid(0.030, 0.022, 0.02, nostril, 16);
-          hole.position.set(n * 0.068, -0.135, 0.572);
-          parts.jaw.add(hole);
-        }
-
-        // Smiling mouth: an arc of tube, which curves where a flattened
-        // ellipsoid could only sit straight.
-        var smileGeo = new three.TorusGeometry(0.145, 0.0125, 8, 26, 2.0);
-        var smile = new three.Mesh(smileGeo, kit.material('#cf9e9e', { roughness: 0.75 }));
-        smile.position.set(0, -0.30, 0.545);
-        smile.rotation.z = (Math.PI - 2.1) / 2 + Math.PI;
-        smile.rotation.x = -0.25;
-        parts.jaw.add(smile);
-      },
+      thumbScale3d: 0.42,
 
       headShape: function (ctx) {
         ctx.beginPath();

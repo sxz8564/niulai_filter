@@ -119,6 +119,11 @@
    */
   function buildHead(spec) {
     var three = T();
+    // An animal with a measured model builds its own head; the parametric
+    // path below is the fallback for animals defined only by 2D numbers.
+    if (spec.buildHead3d) {
+      return spec.buildHead3d(three, { material: material, ellipsoid: ellipsoid, cone: cone, lathe: lathe });
+    }
     var P = proportions(spec);
     var group = new three.Group();
     var parts = { ears: [], lids: [], irises: [], jaw: null, brows: [] };
@@ -291,12 +296,10 @@
     }
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = three.SRGBColorSpace;
-    renderer.toneMapping = three.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+
 
     var scene = new three.Scene();
-    var camera = new three.OrthographicCamera(-1, 1, 1, -1, -100, 100);
-    scene.add(camera);
+    var camera = new three.OrthographicCamera(-1, 1, 1, -1, -2000, 2000);
 
     // Three-point-ish lighting: soft sky fill, a key from upper front-left,
     // and a dim rim so the silhouette separates from the camera image.
@@ -308,6 +311,9 @@
     var rim = new three.DirectionalLight(0xa8c4ff, 0.45);
     rim.position.set(0.7, 0.25, -0.8);
     scene.add(rim);
+    var bounce = new three.DirectionalLight(0xffe6cc, 0.5);
+    bounce.position.set(0.1, -0.9, 0.6);
+    scene.add(bounce);
 
     var head = null;
     var headId = null;
@@ -328,15 +334,11 @@
       sized.w = width;
       sized.h = height;
       // Keep the buffer sane on very large cameras; the head is small on screen.
-      pixelRatio = Math.min(1, 1280 / Math.max(width, 1));
-      renderer.setPixelRatio(pixelRatio);
       renderer.setSize(width, height, false);
       camera.left = -width / 2;
       camera.right = width / 2;
       camera.top = height / 2;
       camera.bottom = -height / 2;
-      camera.near = -Math.max(width, height) * 4;
-      camera.far = Math.max(width, height) * 4;
       camera.updateProjectionMatrix();
     }
 
@@ -362,6 +364,9 @@
         -(pose.roll || 0)
       );
 
+      if (parts.animate) {
+        parts.animate(params);
+      } else {
       if (parts.jaw) {
         parts.jaw.rotation.x = -(params.jawOpen || 0) * parts.jawPivot.maxAngle;
       }
@@ -375,6 +380,7 @@
       }
       for (var b = 0; b < parts.brows.length; b++) {
         parts.brows[b].mesh.position.y = parts.brows[b].baseY + (params.brow || 0) * 0.05;
+      }
       }
 
       renderer.render(scene, camera);
