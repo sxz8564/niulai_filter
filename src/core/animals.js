@@ -675,8 +675,8 @@
           ]
         },
         snout: { rx: 0.292, ry: 0.255, rz: 0.305, y: 0.155, z: 0.205 },
-        eyes: { x: 0.192, y: -0.205, z: 0.318, r: 0.098, aspect: 0.76, iris: 0.086, irisOffset: 0.45 },
-        ear: { type: 'spike', w: 0.165, h: 0.235, x: 0.45, y: -0.185, z: -0.04, tilt: 1.52, spread: 0.62 },
+        eyes: { x: 0.192, y: -0.205, z: 0.318, r: 0.102, aspect: 0.60, tilt: 0.13, iris: 0.066, irisOffset: 0.35 },
+        ear: { type: 'leaf', w: 0.16, h: 0.27, x: 0.415, y: -0.19, z: -0.03, tilt: 1.55, spread: 0.30 },
         nose: null,
         mouth: null,
         brow: { x: 0.192, y: -0.355, z: 0.30, w: 0.20, h: 0.05, d: 0.075, tilt: -0.32, color: '#3d1d07' },

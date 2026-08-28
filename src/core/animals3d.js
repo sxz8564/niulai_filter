@@ -94,6 +94,7 @@
         x: eyes.x, y: eyes.y, z: faceZ,
         r: eyes.r * 1.2,
         aspect: eyes.aspect || 0.92,
+        tilt: eyes.tilt || 0,
         iris: (eyes.iris || 0.5) * eyes.r * 0.95,
         irisOffset: eyes.irisOffset || 0
       },
@@ -161,6 +162,7 @@
     for (var side = -1; side <= 1; side += 2) {
       var eye = new three.Group();
       eye.position.set(side * P.eyes.x, -P.eyes.y, P.eyes.z);
+      eye.rotation.z = side * (P.eyes.tilt || 0);
 
       var eyeRy = P.eyes.r * (P.eyes.aspect === undefined ? 0.92 : P.eyes.aspect);
       var ball = ellipsoid(P.eyes.r, eyeRy, P.eyes.r * 0.62, whiteMat, 24);
@@ -171,6 +173,13 @@
       iris.position.set(0, -(eyeRy - irisRy) * P.eyes.irisOffset, P.eyes.r * 0.5);
       eye.add(iris);
       parts.irises.push(iris);
+
+      if (P.eyes.gloss !== false) {
+        var spark = ellipsoid(P.eyes.iris * 0.30, P.eyes.iris * 0.30, P.eyes.iris * 0.2,
+          material('#ffffff', { roughness: 0.15 }), 14);
+        spark.position.set(-P.eyes.iris * 0.36, irisRy * 0.34, P.eyes.r * 0.72);
+        eye.add(spark);
+      }
 
       parts.lids.push({ group: eye });
 
@@ -201,6 +210,18 @@
         if (P.ear.type === 'round') {
           shell = ellipsoid(P.ear.w * 0.5, P.ear.h * 0.5, P.ear.w * 0.22, furMat, 24);
           shell.position.y = P.ear.h * 0.34;
+        } else if (P.ear.type === 'leaf') {
+          // A leaf: narrow at the base, widest around a third of the way out,
+          // tapering to a soft point. A lathed profile is the only one of
+          // these primitives that can actually taper.
+          var w2 = P.ear.w * 0.5;
+          var h2 = P.ear.h;
+          shell = lathe([
+            [0.30 * w2, 0.00], [0.72 * w2, 0.10 * h2], [0.96 * w2, 0.26 * h2],
+            [1.00 * w2, 0.44 * h2], [0.90 * w2, 0.62 * h2], [0.66 * w2, 0.80 * h2],
+            [0.34 * w2, 0.93 * h2], [0.00, 1.00 * h2]
+          ], furMat, 26);
+          shell.scale.z = 0.42;
         } else if (P.ear.type === 'long' || P.ear.type === 'floppy') {
           shell = ellipsoid(P.ear.w * 0.5, P.ear.h * 0.5, P.ear.w * 0.34, furMat, 24);
           shell.position.y = P.ear.type === 'floppy' ? -P.ear.h * 0.4 : P.ear.h * 0.45;
