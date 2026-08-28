@@ -13,8 +13,8 @@ frames on a canvas, and hands the meeting the filtered stream instead.
 ## What it does
 
 - **13 animals** — Niulai the orange calf, plus shiba, cat, fox, wolf, panda,
-  bear, koala, tiger, bunny, pig, frog and monkey — drawn as vectors, so they
-  stay sharp at any camera resolution.
+  bear, koala, tiger, bunny, pig, frog and monkey — rendered as lit 3D models,
+  so the head has real volume and turns with you in three dimensions.
 - **Real face tracking** with MediaPipe Face Landmarker: the head follows your
   position, size and tilt, turns with you, and its mouth, eyes and brows follow
   your own.
@@ -51,6 +51,7 @@ To add another site, add its URL pattern to `host_permissions`, both
 
 | Setting | What it does |
 | --- | --- |
+| 3D avatar | Lit 3D model. Turn it off for flat art — lighter on old machines, and the automatic fallback where WebGL is unavailable. |
 | Head size | Head width as a multiple of your detected face width. Raise it until your own head is fully covered. |
 | Up / down, Left / right | Nudges the head off the detected face centre. |
 | Tilt with my head | Rotates the animal as you tilt. |
@@ -112,9 +113,18 @@ writes screenshots to `.smoke/`.
 ### Adding an animal
 
 Animals in `src/core/animals.js` are data, not drawing code. Copy an entry in
-`SPECS`, change the palette and the ear/eye/muzzle numbers, and add a
-`markings` function for anything distinctive. The picker, the preview and the
-icons all pick it up automatically.
+`SPECS` and change the palette and the ear/eye/muzzle numbers. The picker, the
+preview and the icons all pick it up automatically.
+
+Each spec drives two renderers. `src/core/animals3d.js` builds a lit 3D head
+from the same numbers, so a new animal gets a 3D model for free; add a
+`model3d` block to override the derived proportions and a `build3d` function
+for parts the generic builder has no concept of. The flat vector art in
+`animals.js` stays as the fallback for machines without WebGL, where a
+`markings` function adds anything distinctive.
+
+The Three.js bundle in `vendor/three/` is built from `tools/three-entry/` with
+`npm run build:three`; only the classes the renderer uses are pulled in.
 
 ## Privacy
 

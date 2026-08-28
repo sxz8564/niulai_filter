@@ -20,7 +20,7 @@
   var running = false;
   var saveTimer = 0;
 
-  var TOGGLES = ['enabled', 'followTilt', 'animate', 'manual', 'debug'];
+  var TOGGLES = ['enabled', 'render3d', 'followTilt', 'animate', 'manual', 'debug'];
   var SLIDERS = [
     { id: 'size', format: function (v) { return v.toFixed(2) + '×'; } },
     { id: 'offsetY', format: formatOffset },
@@ -42,6 +42,8 @@
     canvasEl.height = size * dpr;
     var c = canvasEl.getContext('2d');
     c.clearRect(0, 0, canvasEl.width, canvasEl.height);
+    var spec = NS.animals.get(animalId);
+    if (NS.avatar3d && NS.avatar3d.paintThumb(c, spec, size * dpr)) return;
     NS.animals.drawThumb(c, animalId, size * dpr, { jawOpen: 0.12 });
   }
 

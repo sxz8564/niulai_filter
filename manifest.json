@@ -53,7 +53,9 @@
         "https://app.gather.town/*"
       ],
       "js": [
+        "vendor/three/three.iife.js",
         "src/core/animals.js",
+        "src/core/animals3d.js",
         "src/core/compositor.js",
         "src/page/patch.js"
       ],

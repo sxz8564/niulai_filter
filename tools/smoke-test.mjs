@@ -36,7 +36,8 @@ const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir()
     '--use-fake-device-for-media-stream',
     '--use-fake-ui-for-media-stream',
     '--autoplay-policy=no-user-gesture-required',
-    '--no-sandbox'
+    '--no-sandbox',
+    '--enable-unsafe-swiftshader'
   ]
 });
 
@@ -88,6 +89,13 @@ const painted = await preview.evaluate(() => {
   return { width: canvas.width, height: canvas.height };
 });
 check('preview canvas has camera frames', painted.width >= 320, `${painted.width}×${painted.height}`);
+
+const avatar3d = await preview.evaluate(() => ({
+  supported: !!(globalThis.__CritterCam.avatar3d && globalThis.__CritterCam.avatar3d.isSupported()),
+  renderer: !!(globalThis.__CritterCam.avatar3d && globalThis.__CritterCam.avatar3d.sharedRenderer())
+}));
+check('3D avatar renderer starts', avatar3d.supported && avatar3d.renderer,
+  `webgl ${avatar3d.supported}, renderer ${avatar3d.renderer}`);
 
 /* -------------------------------------- 2. getUserMedia patch on a real host */
 

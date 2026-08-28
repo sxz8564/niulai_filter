@@ -70,6 +70,10 @@
 
         <section class="card block">
           <div class="row">
+            <label for="render3d">3D avatar</label>
+            <label class="switch"><input type="checkbox" id="render3d"><span class="track"></span></label>
+          </div>
+          <div class="row">
             <label for="followTilt">Tilt with my head</label>
             <label class="switch"><input type="checkbox" id="followTilt"><span class="track"></span></label>
           </div>
@@ -114,7 +118,9 @@
 
   <script src="../common/defaults.js"></script>
   <script src="../common/store.js"></script>
+  <script src="../../vendor/three/three.iife.js"></script>
   <script src="../core/animals.js"></script>
+  <script src="../core/animals3d.js"></script>
   <script src="../core/compositor.js"></script>
   <script src="../core/detector-client.js"></script>
   <script src="preview.js"></script>

@@ -14,6 +14,8 @@
   var DEFAULTS = {
     /** Master switch. When false the camera is passed through untouched. */
     enabled: true,
+    /** Render the avatar as a lit 3D model; falls back to flat art without WebGL. */
+    render3d: true,
     /** Id of the animal in the animal registry. */
     animal: 'niulai',
     /** Head width as a multiple of the detected face width. */

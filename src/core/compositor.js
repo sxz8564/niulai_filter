@@ -30,6 +30,18 @@
   function createCompositor(getAnimals) {
     var animals = getAnimals || function () { return NS.animals; };
 
+    var renderer3d = null;
+    var tried3d = false;
+
+    function get3d() {
+      if (tried3d) return renderer3d;
+      tried3d = true;
+      if (NS.avatar3d && NS.avatar3d.isSupported()) {
+        try { renderer3d = NS.avatar3d.createRenderer(); } catch (error) { renderer3d = null; }
+      }
+      return renderer3d;
+    }
+
     var state = {
       settings: NS.normalizeSettings ? NS.normalizeSettings({}) : {},
       // Smoothed pose, in normalized frame coordinates.
@@ -148,6 +160,41 @@
       var x = state.cx * width + s.offsetX * headW;
       var y = state.cy * height + s.offsetY * headW;
 
+      var params = {
+        jawOpen: state.jawOpen,
+        blinkL: state.blinkL,
+        blinkR: state.blinkR,
+        smile: state.smile,
+        brow: state.brow,
+        yaw: state.yaw,
+        pitch: state.pitch,
+        earSwing: state.swing
+      };
+
+      if (s.render3d !== false) {
+        var renderer = get3d();
+        if (renderer) {
+          var layer = null;
+          try {
+            layer = renderer.render(
+              animals().get(s.animal),
+              { x: x, y: y, size: headW, roll: s.followTilt ? state.roll : 0 },
+              params, width, height
+            );
+          } catch (error) {
+            renderer3d = null; // a lost context must not take the camera down
+          }
+          if (layer) {
+            ctx.save();
+            ctx.globalAlpha = state.opacity;
+            ctx.drawImage(layer, 0, 0, width, height);
+            ctx.restore();
+            if (s.debug) drawDebug(ctx, width, height, headW);
+            return;
+          }
+        }
+      }
+
       ctx.save();
       ctx.globalAlpha = state.opacity;
       ctx.translate(x, y);
@@ -164,16 +211,7 @@
       ctx.fill();
       ctx.restore();
 
-      animals().draw(ctx, animals().get(s.animal), {
-        jawOpen: state.jawOpen,
-        blinkL: state.blinkL,
-        blinkR: state.blinkR,
-        smile: state.smile,
-        brow: state.brow,
-        yaw: state.yaw,
-        pitch: state.pitch,
-        earSwing: state.swing
-      });
+      animals().draw(ctx, animals().get(s.animal), params);
       ctx.restore();
 
       if (s.debug) drawDebug(ctx, width, height, headW);

@@ -622,7 +622,7 @@
   var SPECS = [
     base({
       id: 'niulai', name: 'Niulai', emoji: '\ud83d\udc02',
-      fur: '#e8600f', furLight: '#f8862a', furShade: '#a83c05',
+      fur: '#ef6a15', furLight: '#fb9036', furShade: '#a83c05',
       inner: '#f0dcc0', outline: '#8a3003',
       mouthColor: '#5a2a10', mouthInner: '#5c2018', tongue: '#cf6b7c',
       eye: '#3b2109', eyeWhite: '#f6ece0',
@@ -646,6 +646,47 @@
       mouth: { y: 0.42, w: 0.185, depth: 0.038, maxOpen: 0.10, shade: 'rgba(158,92,52,' },
       mouthStyle: 'shade',
       philtrum: false,
+
+      /*
+       * 3D build. The head is three masses - a broad cranium, a tapering lower
+       * face, and a long snout - so the silhouette reads as the reference's
+       * inverted trapezoid from any angle, not just head-on.
+       */
+      model3d: {
+        /*
+         * Profile revolved around the vertical axis: narrow at the chin,
+         * widening to the cheeks, domed on top. That taper is the reference's
+         * inverted trapezoid, and it holds from any angle.
+         */
+        skull: {
+          sx: 1.0, sz: 0.86,
+          profile: [
+            [0.00, -0.66], [0.15, -0.645], [0.235, -0.585], [0.275, -0.47],
+            [0.300, -0.32], [0.335, -0.14], [0.400, 0.06], [0.452, 0.24],
+            [0.455, 0.40], [0.395, 0.545], [0.235, 0.635], [0.00, 0.66]
+          ]
+        },
+        snout: { rx: 0.225, ry: 0.30, rz: 0.36, y: 0.20, z: 0.19 },
+        eyes: { x: 0.265, y: -0.20, z: 0.30, r: 0.105, aspect: 0.5, iris: 0.044, irisOffset: 0.85 },
+        ear: { type: 'spike', w: 0.22, h: 0.30, x: 0.40, y: -0.10, z: -0.05, tilt: 1.20, spread: 0.55 },
+        nose: null,
+        brow: { x: 0.265, y: -0.335, z: 0.28, w: 0.235, h: 0.045, d: 0.07, tilt: -0.07, color: '#5e2a08' },
+        jaw: { pivotY: 0.10, maxAngle: 15 * Math.PI / 180 }
+      },
+      build3d: function (three, group, parts, spec, kit) {
+        var skin = kit.material('#dda684', { roughness: 0.62 });
+
+        // The snout runs long: a lower mass extends it toward the chin without
+        // widening it, so the two read as one form rather than stacked balls.
+        var lower = kit.ellipsoid(0.195, 0.20, 0.315, skin);
+        lower.position.set(0, -0.40, 0.175);
+        parts.jaw.add(lower);
+
+        // Mouth as a change of shade across the snout, not a drawn line.
+        var band = kit.ellipsoid(0.178, 0.05, 0.315, kit.material('#bd7b58', { roughness: 0.75 }));
+        band.position.set(0, -0.36, 0.10);
+        parts.jaw.add(band);
+      },
 
       headShape: function (ctx) {
         ctx.beginPath();

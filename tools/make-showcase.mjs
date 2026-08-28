@@ -12,9 +12,12 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-const browser = await chromium.launch({ args: ['--no-sandbox'] });
+// Software GL so the 3D heads render in headless.
+const browser = await chromium.launch({ args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage();
+await page.addScriptTag({ content: readFileSync(join(root, 'vendor/three/three.iife.js'), 'utf8') });
 await page.addScriptTag({ content: readFileSync(join(root, 'src/core/animals.js'), 'utf8') });
+await page.addScriptTag({ content: readFileSync(join(root, 'src/core/animals3d.js'), 'utf8') });
 
 const dataUrl = await page.evaluate(() => {
   const NS = globalThis.__CritterCam;
@@ -47,7 +50,9 @@ const dataUrl = await page.evaluate(() => {
     const y = row * (cell + label + topPad) + topPad;
     ctx.save();
     ctx.translate(x, y);
-    NS.animals.drawThumb(ctx, spec.id, cell, moods[index % moods.length]);
+    if (!NS.avatar3d.paintThumb(ctx, spec, cell)) {
+      NS.animals.drawThumb(ctx, spec.id, cell, moods[index % moods.length]);
+    }
     ctx.fillStyle = '#736c64';
     ctx.font = '600 13px system-ui, sans-serif';
     ctx.textAlign = 'center';

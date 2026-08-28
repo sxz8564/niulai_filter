@@ -18,9 +18,11 @@ import { dirname, join } from 'node:path';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SIZES = [16, 32, 48, 128];
 
-const browser = await chromium.launch({ args: ['--no-sandbox'] });
+const browser = await chromium.launch({ args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage();
+await page.addScriptTag({ content: readFileSync(join(root, 'vendor/three/three.iife.js'), 'utf8') });
 await page.addScriptTag({ content: readFileSync(join(root, 'src/core/animals.js'), 'utf8') });
+await page.addScriptTag({ content: readFileSync(join(root, 'src/core/animals3d.js'), 'utf8') });
 
 const icons = await page.evaluate((sizes) => {
   const NS = globalThis.__CritterCam;
@@ -45,10 +47,13 @@ const icons = await page.evaluate((sizes) => {
     ctx.beginPath();
     ctx.roundRect(0, 0, size, size, radius);
     ctx.clip();
-    ctx.translate(size / 2, size * 0.56);
-    const scale = size * (size <= 32 ? 0.66 : 0.60);
-    ctx.scale(scale, scale);
-    NS.animals.draw(ctx, NS.animals.get('niulai'), { jawOpen: 0.1 });
+    const spec = NS.animals.get('niulai');
+    if (!NS.avatar3d.paintThumb(ctx, spec, size)) {
+      ctx.translate(size / 2, size * 0.56);
+      const scale = size * (size <= 32 ? 0.66 : 0.60);
+      ctx.scale(scale, scale);
+      NS.animals.draw(ctx, spec, { jawOpen: 0.1 });
+    }
     ctx.restore();
 
     out[size] = canvas.toDataURL('image/png');

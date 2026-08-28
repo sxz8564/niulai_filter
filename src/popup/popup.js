@@ -8,7 +8,7 @@
   var settings = NS.normalizeSettings({});
   var saveTimer = 0;
 
-  var TOGGLES = ['enabled', 'followTilt', 'animate', 'manual', 'debug'];
+  var TOGGLES = ['enabled', 'render3d', 'followTilt', 'animate', 'manual', 'debug'];
   var SLIDERS = [
     { id: 'size', format: function (v) { return v.toFixed(2) + '×'; } },
     { id: 'offsetY', format: formatOffset },
@@ -31,7 +31,9 @@
     canvas.height = cssSize * dpr;
     var ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    NS.animals.drawThumb(ctx, animalId, cssSize * dpr, { blinkL: 0, blinkR: 0, jawOpen: 0.12 });
+    var spec = NS.animals.get(animalId);
+    if (NS.avatar3d && NS.avatar3d.paintThumb(ctx, spec, cssSize * dpr)) return;
+    NS.animals.drawThumb(ctx, animalId, cssSize * dpr, { jawOpen: 0.12 });
   }
 
   function buildGrid() {
