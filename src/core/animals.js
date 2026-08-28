@@ -167,16 +167,21 @@
     }
 
     var ry = r * (E.aspect || 1) * mix(0.18, 1, open);
+    var tilt = (E.tilt || 0) * side;
 
     if (E.white) {
-      fillEllipse(ctx, x, y, r * 1.02, ry * 1.02, 0, spec.eyeWhite || '#ffffff');
+      fillEllipse(ctx, x, y, r * 1.02, ry * 1.02, tilt, spec.eyeWhite || '#ffffff');
       ctx.strokeStyle = 'rgba(0,0,0,0.16)';
       ctx.lineWidth = 0.008;
       ctx.stroke();
       var px = x + p.yaw * r * 0.34;
       var iris = r * (E.iris || 0.46);
-      fillEllipse(ctx, px, y + p.pitch * ry * 0.2, iris, Math.min(ry * 0.92, iris), 0, spec.eye);
-      fillEllipse(ctx, px - iris * 0.34, y - ry * 0.3, r * 0.16, r * 0.16 * open, 0, 'rgba(255,255,255,0.92)');
+      fillEllipse(ctx, px, y + p.pitch * ry * 0.2, iris, Math.min(ry * 0.92, iris), tilt, spec.eye);
+      if (E.gloss !== false) {
+        fillEllipse(ctx, px - iris * 0.34, y - ry * 0.3, r * 0.16, r * 0.16 * open, 0, 'rgba(255,255,255,0.92)');
+      } else {
+        fillEllipse(ctx, px + iris * 0.3, y - ry * 0.28, r * 0.1, r * 0.08 * open, 0, 'rgba(255,255,255,0.5)');
+      }
       if (E.hood) {
         // Heavy upper lid, which is what makes an eye read as a real animal's
         // rather than a cartoon dot.
@@ -304,6 +309,43 @@
     }
 
     var stemTop = spec.nose.y + spec.nose.h * 0.9;
+
+    if (spec.mouthStyle === 'line') {
+      if (openAmt > 0.05) {
+        var lineOpen = M.depth + openAmt * (M.maxOpen || 0.2);
+        openMouthPath(ctx, w, top, lineOpen);
+        ctx.fillStyle = spec.mouthInner || '#5c2230';
+        ctx.fill();
+        ctx.save();
+        ctx.clip();
+        fillEllipse(ctx, 0, top + lineOpen * 0.8, w * 0.6, lineOpen * 0.5, 0, spec.tongue);
+        ctx.restore();
+        openMouthPath(ctx, w, top, lineOpen);
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 0.016;
+        ctx.stroke();
+      } else {
+        // Level line with the corners set slightly low; a smile lifts them.
+        var corner = top + 0.018 - p.smile * 0.07;
+        ctx.beginPath();
+        ctx.moveTo(-w, corner);
+        ctx.quadraticCurveTo(-w * 0.45, top - 0.008, 0, top - 0.004);
+        ctx.quadraticCurveTo(w * 0.45, top - 0.008, w, corner);
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 0.021;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+      // Short philtrum from the nose.
+      ctx.beginPath();
+      ctx.moveTo(0, stemTop);
+      ctx.lineTo(0, top - 0.02);
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = 0.015;
+      ctx.stroke();
+      return;
+    }
+
     if (openAmt > 0.05) {
       var oh = M.depth + openAmt * (M.maxOpen || 0.26);
       openMouthPath(ctx, w, top, oh);
@@ -373,12 +415,24 @@
 
   function drawHead(ctx, spec, p) {
     var H = spec.head;
-    headPath(ctx, H);
+    // An animal whose skull is not a rounded blob can supply its own outline.
+    var outline = spec.headShape || headPath;
 
     var g = ctx.createLinearGradient(0, -H.h / 2, 0, H.h / 2);
     g.addColorStop(0, spec.furLight || spec.fur);
     g.addColorStop(0.52, spec.fur);
     g.addColorStop(1, spec.furShade);
+
+    if (spec.unionOutline) {
+      // The silhouette is the union of several shapes: stroke first, then let
+      // the fill cover every seam so only the outer edge survives.
+      outline(ctx, H);
+      ctx.strokeStyle = spec.outline || spec.furShade;
+      ctx.lineWidth = 0.028;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+    outline(ctx, H);
     ctx.fillStyle = g;
     ctx.fill();
 
@@ -396,10 +450,12 @@
     if (spec.markings) spec.markings(ctx, spec, p);
     ctx.restore();
 
-    headPath(ctx, H);
-    ctx.strokeStyle = spec.outline || spec.furShade;
-    ctx.lineWidth = 0.014;
-    ctx.stroke();
+    if (!spec.unionOutline) {
+      outline(ctx, H);
+      ctx.strokeStyle = spec.outline || spec.furShade;
+      ctx.lineWidth = 0.014;
+      ctx.stroke();
+    }
   }
 
   function drawMuzzle(ctx, spec) {
@@ -508,9 +564,9 @@
   var SPECS = [
     base({
       id: 'niulai', name: 'Niulai', emoji: '\ud83d\udc02',
-      fur: '#ee6516', furLight: '#f9862c', furShade: '#bf480a',
-      inner: '#dda189', outline: '#a63e06',
-      mouthColor: '#7c3f1e', mouthInner: '#6d2a22', tongue: '#e0788a',
+      fur: '#e35d0f', furLight: '#f37c1e', furShade: '#9c3502',
+      inner: '#c4836a', outline: '#7f2c02',
+      mouthColor: '#54260e', mouthInner: '#6d2a22', tongue: '#e0788a',
       eye: '#4a2a12', eyeWhite: '#fdf7ef',
       /*
        * Proportions are taken off the reference render, as fractions of head
@@ -519,11 +575,12 @@
        */
       head: { w: 1.0, h: 1.07, jaw: 0.86, chin: 0.56 },
       ear: { type: 'triangle', w: 0.32, h: 0.56, x: 0.475, y: -0.26, tilt: -1.08, inner: 0.46, innerColor: '#d79c82', swing: 0.8 },
-      eyes: { x: 0.225, y: -0.17, r: 0.078, aspect: 0.98, white: true, iris: 0.68, hood: true, hoodColor: '#8a4212' },
+      eyes: { x: 0.235, y: -0.17, r: 0.075, aspect: 0.84, tilt: 0.14, white: true, iris: 0.82, gloss: false, hood: true, hoodColor: '#79340a' },
       brows: null,      // drawn in faceExtras, so they can be heavy and angled
       muzzle: null,     // drawn in faceExtras, so it can jut past the chin
       nose: { type: 'snout', plate: false, w: 0.34, h: 0.14, y: 0.15, tilt: 0.5, nostrilColor: 'rgba(112,62,36,0.6)' },
-      mouth: { y: 0.34, w: 0.23, depth: 0.045, maxOpen: 0.11 },
+      mouth: { y: 0.36, w: 0.215, depth: 0.045, maxOpen: 0.11 },
+      mouthStyle: 'line',
 
       behind: function (ctx) {
         // Short pale horns breaking the outline just above eye level.
@@ -570,14 +627,35 @@
         }
 
         // Lighter bridge from between the eyes down to the muzzle.
-        fillEllipse(ctx, 0, -0.09, 0.095, 0.16, 0, 'rgba(255,178,116,0.24)');
+        fillEllipse(ctx, 0, -0.09, 0.095, 0.16, 0, 'rgba(255,170,105,0.2)');
+
+        // Shadow under the brow ridge, and a darker rim around the jaw: the
+        // volume that a flat fill otherwise loses.
+        var ridge = ctx.createLinearGradient(0, -0.30, 0, -0.02);
+        ridge.addColorStop(0, 'rgba(88,30,2,0.42)');
+        ridge.addColorStop(1, 'rgba(88,30,2,0)');
+        ctx.fillStyle = ridge;
+        ctx.fillRect(-0.5, -0.30, 1, 0.3);
+
+        ctx.strokeStyle = 'rgba(110,38,2,0.3)';
+        ctx.lineWidth = 0.014;
+        ctx.lineCap = 'round';
+        for (var k = 0; k < 5; k++) {
+          var t = -0.20 + k * 0.09;
+          for (var sg = -1; sg <= 1; sg += 2) {
+            ctx.beginPath();
+            ctx.moveTo(sg * 0.49, t);
+            ctx.quadraticCurveTo(sg * 0.44, t + 0.045, sg * 0.40, t + 0.08);
+            ctx.stroke();
+          }
+        }
       },
 
       faceExtras: function (ctx, spec, p) {
         // Heavy angled brows, riding just above the eyes.
         var browY = -0.275 - p.brow * 0.045;
         for (var side = -1; side <= 1; side += 2) {
-          stripe(ctx, side * 0.225, browY, 0.24, side * 0.20, 0.072, '#6b3210');
+          stripe(ctx, side * 0.235, browY, 0.25, side * 0.28, 0.078, '#542506');
         }
 
         // The muzzle: a rounded mass starting just under the eyes and jutting
@@ -862,9 +940,11 @@
     /** Draws a head that fits a `size` x `size` box, for pickers and previews. */
     drawThumb: function (ctx, id, size, params) {
       ctx.save();
-      ctx.translate(size / 2, size * 0.54);
-      ctx.scale(size * 0.62, size * 0.62);
-      drawAnimal(ctx, this.get(id), params || {});
+      var spec = this.get(id);
+      var scale = size * (spec.thumbScale || 0.62);
+      ctx.translate(size / 2, size * (spec.thumbCentre || 0.54));
+      ctx.scale(scale, scale);
+      drawAnimal(ctx, spec, params || {});
       ctx.restore();
     }
   };
