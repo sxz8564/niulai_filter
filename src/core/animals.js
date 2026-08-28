@@ -177,6 +177,17 @@
       var iris = r * (E.iris || 0.46);
       fillEllipse(ctx, px, y + p.pitch * ry * 0.2, iris, Math.min(ry * 0.92, iris), 0, spec.eye);
       fillEllipse(ctx, px - iris * 0.34, y - ry * 0.3, r * 0.16, r * 0.16 * open, 0, 'rgba(255,255,255,0.92)');
+      if (E.hood) {
+        // Heavy upper lid, which is what makes an eye read as a real animal's
+        // rather than a cartoon dot.
+        ctx.beginPath();
+        ctx.moveTo(x - r * 1.04, y - ry * 0.18);
+        ctx.quadraticCurveTo(x, y - ry * 1.5, x + r * 1.04, y - ry * 0.18);
+        ctx.strokeStyle = E.hoodColor || spec.furShade;
+        ctx.lineWidth = 0.019;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
       return;
     }
 
@@ -218,12 +229,18 @@
     var y = N.y;
     ctx.fillStyle = N.color || spec.noseColor;
     if (N.type === 'snout') {
-      fillEllipse(ctx, 0, y, w, h, 0, N.color || spec.noseColor);
-      ctx.strokeStyle = 'rgba(0,0,0,0.14)';
-      ctx.lineWidth = 0.01;
-      ctx.stroke();
-      fillEllipse(ctx, -w * 0.36, y, w * 0.16, h * 0.42, 0, 'rgba(0,0,0,0.45)');
-      fillEllipse(ctx, w * 0.36, y, w * 0.16, h * 0.42, 0, 'rgba(0,0,0,0.45)');
+      // `plate: false` skips the snout disc, for animals whose muzzle already
+      // supplies the mass and only needs nostrils on top of it.
+      if (N.plate !== false) {
+        fillEllipse(ctx, 0, y, w, h, 0, N.color || spec.noseColor);
+        ctx.strokeStyle = 'rgba(0,0,0,0.14)';
+        ctx.lineWidth = 0.01;
+        ctx.stroke();
+      }
+      var tilt = N.tilt || 0;
+      var nostril = N.nostrilColor || 'rgba(0,0,0,0.45)';
+      fillEllipse(ctx, -w * 0.36, y, w * 0.16, h * 0.42, -tilt, nostril);
+      fillEllipse(ctx, w * 0.36, y, w * 0.16, h * 0.42, tilt, nostril);
       return;
     }
     if (N.type === 'round') {
@@ -490,59 +507,125 @@
 
   var SPECS = [
     base({
-      id: 'niulai', name: 'Niulai', emoji: '\ud83d\udc2e',
-      fur: '#ef6a1c', furLight: '#fb8f40', furShade: '#c14e10',
-      inner: '#e8a48c', muzzleColor: '#f3d7bf', noseColor: '#f8e3d1',
-      mouthColor: '#8a4a24', outline: '#bd4a0d',
-      eye: '#5a3218', eyeWhite: '#fffaf4',
-      head: { w: 1.04, h: 1.02, jaw: 0.88, chin: 0.60 },
-      // Cow ears sit high and stick straight out to the sides.
-      ear: { type: 'triangle', w: 0.30, h: 0.40, x: 0.50, y: -0.22, tilt: -1.55, inner: 0.56, swing: 0.7 },
-      eyes: { x: 0.215, y: -0.065, r: 0.086, aspect: 1, white: true, iris: 0.64 },
-      brows: { w: 0.19, h: 0.04, weight: 0.04, color: '#7d3a16' },
-      muzzle: { w: 0.74, h: 0.46, y: 0.30 },
-      nose: { w: 0.17, h: 0.09, y: 0.215, type: 'snout' },
-      mouth: { y: 0.37, w: 0.20, depth: 0.055, maxOpen: 0.12 },
+      id: 'niulai', name: 'Niulai', emoji: '\ud83d\udc02',
+      fur: '#ee6516', furLight: '#f9862c', furShade: '#bf480a',
+      inner: '#dda189', outline: '#a63e06',
+      mouthColor: '#7c3f1e', mouthInner: '#6d2a22', tongue: '#e0788a',
+      eye: '#4a2a12', eyeWhite: '#fdf7ef',
+      /*
+       * Proportions are taken off the reference render, as fractions of head
+       * height measured from the top of the skull: fringe hem 22%, brows 27%,
+       * eyes 33%, muzzle top 45%, nostrils 62%, mouth 78%, chin 95%.
+       */
+      head: { w: 1.0, h: 1.07, jaw: 0.86, chin: 0.56 },
+      ear: { type: 'triangle', w: 0.32, h: 0.56, x: 0.475, y: -0.26, tilt: -1.08, inner: 0.46, innerColor: '#d79c82', swing: 0.8 },
+      eyes: { x: 0.225, y: -0.17, r: 0.078, aspect: 0.98, white: true, iris: 0.68, hood: true, hoodColor: '#8a4212' },
+      brows: null,      // drawn in faceExtras, so they can be heavy and angled
+      muzzle: null,     // drawn in faceExtras, so it can jut past the chin
+      nose: { type: 'snout', plate: false, w: 0.34, h: 0.14, y: 0.15, tilt: 0.5, nostrilColor: 'rgba(112,62,36,0.6)' },
+      mouth: { y: 0.34, w: 0.23, depth: 0.045, maxOpen: 0.11 },
+
       behind: function (ctx) {
-        // Stubby pale horns, angled out from behind the ears.
+        // Short pale horns breaking the outline just above eye level.
         for (var side = -1; side <= 1; side += 2) {
           ctx.save();
-          ctx.translate(side * 0.45, 0.02);
-          ctx.rotate(side * 1.45);
+          ctx.translate(side * 0.43, -0.05);
+          ctx.rotate(side * 1.5);
           ctx.beginPath();
-          ctx.moveTo(-0.055, 0.01);
-          ctx.quadraticCurveTo(-0.035, -0.15, 0, -0.20);
-          ctx.quadraticCurveTo(0.035, -0.15, 0.055, 0.01);
+          ctx.moveTo(-0.046, 0.02);
+          ctx.quadraticCurveTo(-0.040, -0.07, 0.004, -0.145);
+          ctx.quadraticCurveTo(0.042, -0.06, 0.046, 0.02);
           ctx.closePath();
-          ctx.fillStyle = '#f1e3c6';
+          var horn = ctx.createLinearGradient(0, 0.02, 0, -0.145);
+          horn.addColorStop(0, '#dcc39a');
+          horn.addColorStop(1, '#fdf7e6');
+          ctx.fillStyle = horn;
           ctx.fill();
-          ctx.strokeStyle = 'rgba(90,50,24,0.25)';
-          ctx.lineWidth = 0.011;
+          ctx.strokeStyle = 'rgba(90,50,24,0.28)';
+          ctx.lineWidth = 0.01;
           ctx.stroke();
           ctx.restore();
         }
       },
+
       markings: function (ctx) {
-        // Shaggy forelock across the crown, scalloped along its lower edge.
-        var scallops = 6;
-        var left = -0.62;
-        var right = 0.62;
-        var step = (right - left) / scallops;
-        var hem = -0.38;
-        ctx.beginPath();
-        ctx.moveTo(left, -0.62);
-        ctx.lineTo(right, -0.62);
-        ctx.lineTo(right, hem);
-        for (var i = 0; i < scallops; i++) {
-          var xa = right - i * step;
-          var xb = xa - step;
-          ctx.quadraticCurveTo((xa + xb) / 2, hem + 0.14, xb, hem);
+        // Shaggy crown, sitting above the brows with an uneven hem.
+        var crown = ctx.createLinearGradient(0, -0.56, 0, -0.32);
+        crown.addColorStop(0, '#ef7420');
+        crown.addColorStop(1, '#cd4d0a');
+        ctx.fillStyle = crown;
+        ctx.fillRect(-0.62, -0.72, 1.24, 0.25);
+
+        var tips = [-0.36, -0.42, -0.33, -0.40, -0.34, -0.41, -0.35, -0.43, -0.37];
+        for (var i = 0; i < tips.length; i++) {
+          var cx = -0.52 + i * 0.13;
+          var half = 0.10;
+          ctx.beginPath();
+          ctx.moveTo(cx - half, -0.50);
+          ctx.bezierCurveTo(cx - half * 0.8, tips[i] - 0.03, cx - half * 0.4, tips[i], cx, tips[i]);
+          ctx.bezierCurveTo(cx + half * 0.4, tips[i], cx + half * 0.8, tips[i] - 0.03, cx + half, -0.50);
+          ctx.closePath();
+          ctx.fillStyle = i % 2 ? '#c94a09' : '#d8560e';
+          ctx.fill();
         }
-        ctx.closePath();
-        ctx.fillStyle = '#cd4d09';
+
+        // Lighter bridge from between the eyes down to the muzzle.
+        fillEllipse(ctx, 0, -0.09, 0.095, 0.16, 0, 'rgba(255,178,116,0.24)');
+      },
+
+      faceExtras: function (ctx, spec, p) {
+        // Heavy angled brows, riding just above the eyes.
+        var browY = -0.275 - p.brow * 0.045;
+        for (var side = -1; side <= 1; side += 2) {
+          stripe(ctx, side * 0.225, browY, 0.24, side * 0.20, 0.072, '#6b3210');
+        }
+
+        // The muzzle: a rounded mass starting just under the eyes and jutting
+        // forward past the chin.
+        var snout = function () {
+          ctx.beginPath();
+          ctx.moveTo(-0.245, 0.02);
+          ctx.bezierCurveTo(-0.155, -0.075, 0.155, -0.075, 0.245, 0.02);
+          ctx.bezierCurveTo(0.29, 0.16, 0.278, 0.34, 0.188, 0.435);
+          ctx.bezierCurveTo(0.098, 0.51, -0.098, 0.51, -0.188, 0.435);
+          ctx.bezierCurveTo(-0.278, 0.34, -0.29, 0.16, -0.245, 0.02);
+          ctx.closePath();
+        };
+
+        // Soft shadow where the muzzle meets the face.
+        var shade = ctx.createRadialGradient(0, 0.22, 0.14, 0, 0.22, 0.44);
+        shade.addColorStop(0, 'rgba(120,48,6,0.26)');
+        shade.addColorStop(1, 'rgba(120,48,6,0)');
+        ctx.fillStyle = shade;
+        ctx.fillRect(-0.5, -0.12, 1, 0.78);
+
+        snout();
+        var skin = ctx.createLinearGradient(0, -0.075, 0, 0.51);
+        skin.addColorStop(0, '#f2cdaa');
+        skin.addColorStop(0.42, '#ecc09b');
+        skin.addColorStop(0.8, '#f0dcae');
+        skin.addColorStop(1, '#f6ecc6');
+        ctx.fillStyle = skin;
         ctx.fill();
-        // Pale chin and chest, as on the reference.
-        fillEllipse(ctx, 0, 0.60, 0.40, 0.18, 0, '#f7e8bd');
+
+        ctx.save();
+        snout();
+        ctx.clip();
+        // Fade the top edge into the fur so the muzzle grows out of the face
+        // rather than sitting on it like a mask.
+        var blend = ctx.createLinearGradient(0, -0.08, 0, 0.10);
+        blend.addColorStop(0, 'rgba(214,104,34,0.8)');
+        blend.addColorStop(0.6, 'rgba(226,148,90,0.24)');
+        blend.addColorStop(1, 'rgba(230,160,100,0)');
+        ctx.fillStyle = blend;
+        ctx.fillRect(-0.35, -0.09, 0.7, 0.22);
+        fillEllipse(ctx, 0, 0.09, 0.135, 0.05, 0, 'rgba(255,255,255,0.20)');
+        ctx.restore();
+
+        snout();
+        ctx.strokeStyle = 'rgba(150,86,46,0.22)';
+        ctx.lineWidth = 0.011;
+        ctx.stroke();
       }
     }),
 
