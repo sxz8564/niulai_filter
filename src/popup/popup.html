@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Critter Cam</title>
+  <link rel="stylesheet" href="../common/ui.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <canvas id="brand" width="80" height="80" aria-hidden="true"></canvas>
+      <div class="title">
+        <h1>Critter Cam</h1>
+        <p class="status"><span class="dot" id="statusDot"></span><span id="statusText">Checking this tab…</span></p>
+      </div>
+      <label class="switch" title="Turn the animal head on or off">
+        <input type="checkbox" id="enabled">
+        <span class="track"></span>
+      </label>
+    </header>
+
+    <section class="card block">
+      <div class="block-head"><h2>Animal</h2><span class="muted" id="animalName"></span></div>
+      <div class="animal-grid" id="animalGrid"></div>
+    </section>
+
+    <section class="card block">
+      <div class="slider">
+        <div class="head"><b>Head size</b><span id="sizeValue"></span></div>
+        <input type="range" id="size" min="0.8" max="3" step="0.01">
+      </div>
+      <div class="slider">
+        <div class="head"><b>Up / down</b><span id="offsetYValue"></span></div>
+        <input type="range" id="offsetY" min="-0.8" max="0.8" step="0.01">
+      </div>
+      <div class="slider">
+        <div class="head"><b>Left / right</b><span id="offsetXValue"></span></div>
+        <input type="range" id="offsetX" min="-0.8" max="0.8" step="0.01">
+      </div>
+    </section>
+
+    <section class="card block">
+      <div class="row">
+        <label for="followTilt">Tilt with my head</label>
+        <label class="switch"><input type="checkbox" id="followTilt"><span class="track"></span></label>
+      </div>
+      <div class="row">
+        <label for="animate">Mouth &amp; eyes follow me</label>
+        <label class="switch"><input type="checkbox" id="animate"><span class="track"></span></label>
+      </div>
+    </section>
+
+    <details class="card block">
+      <summary>Advanced</summary>
+      <div class="slider">
+        <div class="head"><b>Smoothing</b><span id="smoothingValue"></span></div>
+        <input type="range" id="smoothing" min="0" max="0.95" step="0.01">
+      </div>
+      <div class="slider">
+        <div class="head"><b>Tracking rate</b><span id="detectFpsValue"></span></div>
+        <input type="range" id="detectFps" min="5" max="30" step="1">
+      </div>
+      <div class="row">
+        <label for="onLost">When my face is lost</label>
+        <select id="onLost">
+          <option value="fade">Fade out</option>
+          <option value="keep">Keep in place</option>
+          <option value="hide">Hide at once</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="manual">Pin in place (no tracking)</label>
+        <label class="switch"><input type="checkbox" id="manual"><span class="track"></span></label>
+      </div>
+      <div class="row">
+        <label for="debug">Show tracker overlay</label>
+        <label class="switch"><input type="checkbox" id="debug"><span class="track"></span></label>
+      </div>
+      <p class="hint" id="detectorHint"></p>
+    </details>
+
+    <footer>
+      <button class="primary" id="openPreview">Live preview</button>
+      <button id="reset">Reset</button>
+    </footer>
+    <p class="hint foot">Turn your camera off and on in the meeting after changing tabs or reloading.</p>
+  </div>
+
+  <script src="../common/defaults.js"></script>
+  <script src="../common/store.js"></script>
+  <script src="../core/animals.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

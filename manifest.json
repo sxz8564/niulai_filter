@@ -1,0 +1,110 @@
+{
+  "manifest_version": 3,
+  "name": "Critter Cam \u2014 AR animal head for your webcam",
+  "version": "1.0.0",
+  "description": "Replaces your head with an animated animal, live in your webcam feed, so it works in Google Meet and other video calls.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "https://*.zoom.us/*",
+    "https://teams.microsoft.com/*",
+    "https://teams.live.com/*",
+    "https://*.webex.com/*",
+    "https://whereby.com/*",
+    "https://*.whereby.com/*",
+    "https://discord.com/*",
+    "https://app.gather.town/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Critter Cam",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_page": "src/preview/preview.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://meet.google.com/*",
+        "https://*.zoom.us/*",
+        "https://teams.microsoft.com/*",
+        "https://teams.live.com/*",
+        "https://*.webex.com/*",
+        "https://whereby.com/*",
+        "https://*.whereby.com/*",
+        "https://discord.com/*",
+        "https://app.gather.town/*"
+      ],
+      "js": [
+        "src/core/animals.js",
+        "src/core/compositor.js",
+        "src/page/patch.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://meet.google.com/*",
+        "https://*.zoom.us/*",
+        "https://teams.microsoft.com/*",
+        "https://teams.live.com/*",
+        "https://*.webex.com/*",
+        "https://whereby.com/*",
+        "https://*.whereby.com/*",
+        "https://discord.com/*",
+        "https://app.gather.town/*"
+      ],
+      "js": [
+        "src/common/defaults.js",
+        "src/core/detector-client.js",
+        "src/content/bridge.js"
+      ],
+      "world": "ISOLATED",
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/core/detector.worker.js",
+        "vendor/tasks-vision/vision_bundle.js",
+        "vendor/tasks-vision/wasm/*",
+        "models/*"
+      ],
+      "matches": [
+        "https://meet.google.com/*",
+        "https://*.zoom.us/*",
+        "https://teams.microsoft.com/*",
+        "https://teams.live.com/*",
+        "https://*.webex.com/*",
+        "https://whereby.com/*",
+        "https://*.whereby.com/*",
+        "https://discord.com/*",
+        "https://app.gather.town/*"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
+}

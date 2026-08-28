@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Critter Cam — live preview</title>
+  <link rel="stylesheet" href="../common/ui.css">
+  <link rel="stylesheet" href="preview.css">
+</head>
+<body>
+  <div class="page">
+    <header class="page-head">
+      <canvas id="brand" width="96" height="96" aria-hidden="true"></canvas>
+      <div>
+        <h1>Critter Cam</h1>
+        <p class="muted">Tune your animal head here, then join a meeting — the same look goes out on your camera.</p>
+      </div>
+      <label class="switch" title="Turn the animal head on or off">
+        <input type="checkbox" id="enabled">
+        <span class="track"></span>
+      </label>
+    </header>
+
+    <main>
+      <section class="stage card">
+        <div class="viewport">
+          <canvas id="output" width="1280" height="720"></canvas>
+          <div class="overlay" id="overlay">
+            <p>Start the camera to preview your animal head.</p>
+            <button class="primary" id="start">Start camera</button>
+          </div>
+        </div>
+        <div class="stage-bar">
+          <p class="status"><span class="dot" id="statusDot"></span><span id="statusText">Camera off</span></p>
+          <div class="stage-actions">
+            <select id="device" title="Camera" hidden></select>
+            <label class="check"><input type="checkbox" id="mirror" checked> Mirror preview</label>
+            <button id="stop" hidden>Stop camera</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="card block">
+          <div class="block-head"><h2>Animal</h2><span class="muted" id="animalName"></span></div>
+          <div class="animal-grid" id="animalGrid"></div>
+        </section>
+
+        <section class="card block">
+          <div class="slider">
+            <div class="head"><b>Head size</b><span id="sizeValue"></span></div>
+            <input type="range" id="size" min="0.8" max="3" step="0.01">
+          </div>
+          <div class="slider">
+            <div class="head"><b>Up / down</b><span id="offsetYValue"></span></div>
+            <input type="range" id="offsetY" min="-0.8" max="0.8" step="0.01">
+          </div>
+          <div class="slider">
+            <div class="head"><b>Left / right</b><span id="offsetXValue"></span></div>
+            <input type="range" id="offsetX" min="-0.8" max="0.8" step="0.01">
+          </div>
+          <div class="slider">
+            <div class="head"><b>Smoothing</b><span id="smoothingValue"></span></div>
+            <input type="range" id="smoothing" min="0" max="0.95" step="0.01">
+          </div>
+          <div class="slider">
+            <div class="head"><b>Tracking rate</b><span id="detectFpsValue"></span></div>
+            <input type="range" id="detectFps" min="5" max="30" step="1">
+          </div>
+        </section>
+
+        <section class="card block">
+          <div class="row">
+            <label for="followTilt">Tilt with my head</label>
+            <label class="switch"><input type="checkbox" id="followTilt"><span class="track"></span></label>
+          </div>
+          <div class="row">
+            <label for="animate">Mouth &amp; eyes follow me</label>
+            <label class="switch"><input type="checkbox" id="animate"><span class="track"></span></label>
+          </div>
+          <div class="row">
+            <label for="manual">Pin in place (no tracking)</label>
+            <label class="switch"><input type="checkbox" id="manual"><span class="track"></span></label>
+          </div>
+          <div class="row">
+            <label for="debug">Show tracker overlay</label>
+            <label class="switch"><input type="checkbox" id="debug"><span class="track"></span></label>
+          </div>
+          <div class="row">
+            <label for="onLost">When my face is lost</label>
+            <select id="onLost">
+              <option value="fade">Fade out</option>
+              <option value="keep">Keep in place</option>
+              <option value="hide">Hide at once</option>
+            </select>
+          </div>
+          <div class="row"><button id="reset">Reset everything</button></div>
+        </section>
+      </aside>
+    </main>
+
+    <section class="card howto">
+      <h2>Using it in Google Meet</h2>
+      <ol>
+        <li>Open or reload <b>meet.google.com</b> — the filter hooks the camera as the page loads, so a tab that was already open needs a reload.</li>
+        <li>Join the meeting and turn your camera on. Your self-view shows the animal head, and that is exactly what everyone else receives.</li>
+        <li>Adjust from the toolbar popup at any time; changes apply live, no rejoin needed.</li>
+        <li>If the camera was already running when you changed something big, toggle the camera off and on in Meet.</li>
+      </ol>
+      <p class="muted">Also works on Zoom web, Microsoft Teams, Webex, Whereby, Discord and Gather. Native desktop apps cannot be filtered — use the browser version of the meeting.</p>
+    </section>
+  </div>
+
+  <video id="camera" playsinline muted hidden></video>
+
+  <script src="../common/defaults.js"></script>
+  <script src="../common/store.js"></script>
+  <script src="../core/animals.js"></script>
+  <script src="../core/compositor.js"></script>
+  <script src="../core/detector-client.js"></script>
+  <script src="preview.js"></script>
+</body>
+</html>

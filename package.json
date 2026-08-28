@@ -1,0 +1,15 @@
+{
+  "name": "critter-cam",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chrome extension that replaces your head with an animated animal in your webcam feed.",
+  "scripts": {
+    "test": "node tools/pose-test.mjs && node tools/smoke-test.mjs",
+    "test:pose": "node tools/pose-test.mjs",
+    "test:smoke": "node tools/smoke-test.mjs",
+    "icons": "node tools/make-icons.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}
