@@ -79,6 +79,12 @@
         ctx.bezierCurveTo(halfW * 1.05, h, halfW * 1.25, h * 0.42, halfW, -0.02);
         ctx.quadraticCurveTo(0, -0.12, -halfW, -0.02);
         break;
+      case 'spike':
+        ctx.moveTo(-halfW, 0.03);
+        ctx.quadraticCurveTo(-halfW * 0.55, -h * 0.55, 0, -h);
+        ctx.quadraticCurveTo(halfW * 0.55, -h * 0.55, halfW, 0.03);
+        ctx.quadraticCurveTo(0, 0.10, -halfW, 0.03);
+        break;
       case 'tuft':
         ctx.moveTo(-halfW, 0.05);
         ctx.quadraticCurveTo(-halfW * 0.95, -h * 0.85, -halfW * 0.1, -h);
@@ -229,6 +235,7 @@
 
   function drawNose(ctx, spec) {
     var N = spec.nose;
+    if (N.hidden) return;
     var w = N.w;
     var h = N.h;
     var y = N.y;
@@ -337,13 +344,14 @@
         ctx.lineCap = 'round';
         ctx.stroke();
       }
-      // Short philtrum from the nose.
-      ctx.beginPath();
-      ctx.moveTo(0, stemTop);
-      ctx.lineTo(0, top - 0.02);
-      ctx.strokeStyle = lineColor;
-      ctx.lineWidth = 0.015;
-      ctx.stroke();
+      if (spec.philtrum !== false) {
+        ctx.beginPath();
+        ctx.moveTo(0, stemTop);
+        ctx.lineTo(0, top - 0.02);
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 0.015;
+        ctx.stroke();
+      }
       return;
     }
 
@@ -565,148 +573,131 @@
   var SPECS = [
     base({
       id: 'niulai', name: 'Niulai', emoji: '\ud83d\udc02',
-      fur: '#e35d0f', furLight: '#f37c1e', furShade: '#9c3502',
-      inner: '#c4836a', outline: '#7f2c02',
-      mouthColor: '#54260e', mouthInner: '#6d2a22', tongue: '#e0788a',
-      eye: '#4a2a12', eyeWhite: '#fdf7ef',
+      fur: '#e8600f', furLight: '#f8862a', furShade: '#a83c05',
+      inner: '#f0dcc0', outline: '#8a3003',
+      mouthColor: '#5a2a10', mouthInner: '#5c2018', tongue: '#cf6b7c',
+      eye: '#3b2109', eyeWhite: '#f6ece0',
       /*
-       * Proportions are taken off the reference render, as fractions of head
-       * height measured from the top of the skull: fringe hem 22%, brows 27%,
-       * eyes 33%, muzzle top 45%, nostrils 62%, mouth 78%, chin 95%.
+       * Corrections from the reference, feature by feature:
+       *   brows   flat, with a slight frown - not arched
+       *   muzzle  very long and skin-coloured - not a round pad, and with no
+       *           nostrils and no philtrum groove, neither of which the
+       *           reference has
+       *   ears    pointy and on the sides of the head - not rounded on top
+       *   eyes    flat - not round
        */
-      head: { w: 1.0, h: 1.08, jaw: 0.82, chin: 0.50 },
-      ear: { type: 'triangle', w: 0.31, h: 0.46, x: 0.46, y: -0.34, tilt: -0.86, inner: 0.5, innerColor: '#cf9078', swing: 0.8 },
-      eyes: { x: 0.22, y: -0.19, r: 0.085, aspect: 0.70, tilt: -0.06, white: true, iris: 0.70, gloss: false, hood: true, hoodColor: '#79340a' },
-      brows: null,      // drawn in faceExtras, so they can be heavy and angled
-      muzzle: null,     // drawn in faceExtras, so it can jut past the chin
-      nose: { type: 'snout', plate: false, w: 0.40, h: 0.115, y: 0.06, tilt: 0.5, nostrilR: 0.05, nostrilColor: 'rgba(104,56,30,0.66)' },
-      mouth: { y: 0.29, w: 0.235, depth: 0.045, maxOpen: 0.13 },
+      head: { w: 1.0, h: 1.29 },
+      thumbScale: 0.46,
+      thumbCentre: 0.50,
+      ear: { type: 'spike', w: 0.29, h: 0.33, x: 0.42, y: -0.18, tilt: 1.14, inner: 0.58, innerColor: '#f2e2c6', swing: 0.6 },
+      eyes: { x: 0.26, y: -0.30, r: 0.098, aspect: 0.42, white: true, iris: 0.62, gloss: false, hood: true, hoodColor: '#7a3506' },
+      brows: null,
+      muzzle: null,
+      nose: { hidden: true, y: 0.16, h: 0.10, w: 0.1, type: 'round' },
+      mouth: { y: 0.43, w: 0.175, depth: 0.035, maxOpen: 0.10 },
       mouthStyle: 'line',
+      philtrum: false,
 
-      behind: function (ctx) {
-        // Short pale horns breaking the outline just above eye level.
-        for (var side = -1; side <= 1; side += 2) {
-          ctx.save();
-          ctx.translate(side * 0.43, -0.05);
-          ctx.rotate(side * 1.5);
-          ctx.beginPath();
-          ctx.moveTo(-0.046, 0.02);
-          ctx.quadraticCurveTo(-0.040, -0.07, 0.004, -0.145);
-          ctx.quadraticCurveTo(0.042, -0.06, 0.046, 0.02);
-          ctx.closePath();
-          var horn = ctx.createLinearGradient(0, 0.02, 0, -0.145);
-          horn.addColorStop(0, '#dcc39a');
-          horn.addColorStop(1, '#fdf7e6');
-          ctx.fillStyle = horn;
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(90,50,24,0.28)';
-          ctx.lineWidth = 0.01;
-          ctx.stroke();
-          ctx.restore();
-        }
+      headShape: function (ctx) {
+        ctx.beginPath();
+        ctx.moveTo(0, -0.63);
+        ctx.bezierCurveTo(0.335, -0.625, 0.497, -0.485, 0.508, -0.28); // cranium
+        ctx.bezierCurveTo(0.520, -0.13, 0.452, 0.01, 0.362, 0.13);   // cheek narrowing
+        ctx.bezierCurveTo(0.322, 0.24, 0.312, 0.40, 0.306, 0.52);    // long muzzle
+        ctx.bezierCurveTo(0.300, 0.61, 0.175, 0.67, 0, 0.67);
+        ctx.bezierCurveTo(-0.175, 0.67, -0.300, 0.61, -0.306, 0.52);
+        ctx.bezierCurveTo(-0.312, 0.40, -0.322, 0.24, -0.362, 0.13);
+        ctx.bezierCurveTo(-0.452, 0.01, -0.520, -0.13, -0.508, -0.28);
+        ctx.bezierCurveTo(-0.497, -0.485, -0.335, -0.625, 0, -0.63);
+        ctx.closePath();
       },
 
       markings: function (ctx) {
-        // Shaggy crown, sitting above the brows with an uneven hem.
-        var crown = ctx.createLinearGradient(0, -0.58, 0, -0.36);
-        crown.addColorStop(0, '#ef7420');
-        crown.addColorStop(1, '#cd4d0a');
-        ctx.fillStyle = crown;
-        ctx.fillRect(-0.62, -0.78, 1.24, 0.27);
+        // Volume: lit forehead, shaded jaw.
+        var dome = ctx.createRadialGradient(-0.10, -0.46, 0.04, 0, -0.24, 0.66);
+        dome.addColorStop(0, 'rgba(255,196,120,0.45)');
+        dome.addColorStop(0.6, 'rgba(255,170,90,0)');
+        dome.addColorStop(1, 'rgba(120,42,2,0.28)');
+        ctx.fillStyle = dome;
+        ctx.fillRect(-0.7, -0.9, 1.4, 1.8);
 
-        var tips = [-0.39, -0.45, -0.38, -0.43, -0.40, -0.46, -0.39, -0.44, -0.41];
+        // The long skin-coloured muzzle. Clipped to the head, so it takes the
+        // silhouette and runs all the way to the chin.
+        ctx.beginPath();
+        ctx.moveTo(-0.262, 0.03);
+        ctx.bezierCurveTo(-0.19, -0.115, 0.19, -0.115, 0.262, 0.03);
+        ctx.bezierCurveTo(0.272, 0.19, 0.252, 0.37, 0.226, 0.50);
+        ctx.bezierCurveTo(0.206, 0.60, 0.112, 0.655, 0, 0.655);
+        ctx.bezierCurveTo(-0.112, 0.655, -0.206, 0.60, -0.226, 0.50);
+        ctx.bezierCurveTo(-0.252, 0.37, -0.272, 0.19, -0.262, 0.03);
+        ctx.closePath();
+        var skin = ctx.createLinearGradient(0, -0.09, 0, 0.66);
+        skin.addColorStop(0, '#dda589');
+        skin.addColorStop(0.32, '#e9bb9b');
+        skin.addColorStop(0.72, '#ecd2ab');
+        skin.addColorStop(1, '#f3e6c0');
+        ctx.fillStyle = skin;
+        ctx.fill();
+
+        // Fade the top edge into the fur, clipped to the muzzle so the blend
+        // follows its curve instead of ruling a line across the face.
+        ctx.save();
+        ctx.clip();
+        var fade = ctx.createLinearGradient(0, -0.11, 0, 0.14);
+        fade.addColorStop(0, 'rgba(216,100,22,0.95)');
+        fade.addColorStop(0.55, 'rgba(224,150,100,0.35)');
+        fade.addColorStop(1, 'rgba(228,170,120,0)');
+        ctx.fillStyle = fade;
+        ctx.fillRect(-0.32, -0.12, 0.64, 0.30);
+        ctx.restore();
+
+        // Shadow under the brow ridge.
+        var ridge = ctx.createLinearGradient(0, -0.50, 0, -0.20);
+        ridge.addColorStop(0, 'rgba(92,34,4,0.4)');
+        ridge.addColorStop(1, 'rgba(92,34,4,0)');
+        ctx.fillStyle = ridge;
+        ctx.fillRect(-0.5, -0.50, 1, 0.32);
+
+        // Shaggy crown, hem clear of the brows.
+        var crown = ctx.createLinearGradient(0, -0.64, 0, -0.44);
+        crown.addColorStop(0, '#f07d24');
+        crown.addColorStop(1, '#bf4507');
+        ctx.fillStyle = crown;
+        ctx.fillRect(-0.62, -0.80, 1.24, 0.28);
+        var tips = [-0.48, -0.54, -0.47, -0.53, -0.49, -0.55, -0.48, -0.54, -0.50];
         for (var i = 0; i < tips.length; i++) {
           var cx = -0.52 + i * 0.13;
-          var half = 0.10;
+          var half = 0.105;
           ctx.beginPath();
-          ctx.moveTo(cx - half, -0.56);
+          ctx.moveTo(cx - half, -0.60);
           ctx.bezierCurveTo(cx - half * 0.8, tips[i] - 0.03, cx - half * 0.4, tips[i], cx, tips[i]);
-          ctx.bezierCurveTo(cx + half * 0.4, tips[i], cx + half * 0.8, tips[i] - 0.03, cx + half, -0.50);
+          ctx.bezierCurveTo(cx + half * 0.4, tips[i], cx + half * 0.8, tips[i] - 0.03, cx + half, -0.60);
           ctx.closePath();
-          ctx.fillStyle = i % 2 ? '#c94a09' : '#d8560e';
+          ctx.fillStyle = i % 2 ? '#bc4507' : '#d0550e';
           ctx.fill();
         }
 
-        // Lighter bridge from between the eyes down to the muzzle.
-        fillEllipse(ctx, 0, -0.09, 0.095, 0.16, 0, 'rgba(255,170,105,0.2)');
-
-        // Shadow under the brow ridge, and a darker rim around the jaw: the
-        // volume that a flat fill otherwise loses.
-        var ridge = ctx.createLinearGradient(0, -0.30, 0, -0.02);
-        ridge.addColorStop(0, 'rgba(88,30,2,0.42)');
-        ridge.addColorStop(1, 'rgba(88,30,2,0)');
-        ctx.fillStyle = ridge;
-        ctx.fillRect(-0.5, -0.30, 1, 0.3);
-
-        ctx.strokeStyle = 'rgba(110,38,2,0.3)';
+        // Fur strokes down the cheeks.
+        ctx.strokeStyle = 'rgba(120,44,4,0.28)';
         ctx.lineWidth = 0.014;
         ctx.lineCap = 'round';
-        for (var k = 0; k < 5; k++) {
-          var t = -0.20 + k * 0.09;
+        for (var k = 0; k < 4; k++) {
+          var t = -0.30 + k * 0.09;
           for (var sg = -1; sg <= 1; sg += 2) {
             ctx.beginPath();
             ctx.moveTo(sg * 0.49, t);
-            ctx.quadraticCurveTo(sg * 0.44, t + 0.045, sg * 0.40, t + 0.08);
+            ctx.quadraticCurveTo(sg * 0.44, t + 0.045, sg * 0.41, t + 0.08);
             ctx.stroke();
           }
         }
       },
 
       faceExtras: function (ctx, spec, p) {
-        // Heavy angled brows, riding just above the eyes.
-        var browY = -0.305 - p.brow * 0.045;
+        // Flat brows with a slight frown: the inner ends sit a little lower.
+        var browY = -0.425 - p.brow * 0.05;
         for (var side = -1; side <= 1; side += 2) {
-          stripe(ctx, side * 0.22, browY, 0.215, side * 0.26, 0.072, '#542506');
+          stripe(ctx, side * 0.255, browY, 0.25, -side * 0.07, 0.062, '#5e2a08');
         }
-
-        // The muzzle: a rounded mass starting just under the eyes and jutting
-        // forward past the chin.
-        var snout = function () {
-          ctx.beginPath();
-          ctx.moveTo(-0.27, 0.055);
-          ctx.bezierCurveTo(-0.175, -0.075, 0.175, -0.075, 0.27, 0.055);
-          ctx.bezierCurveTo(0.30, 0.20, 0.285, 0.38, 0.195, 0.455);
-          ctx.bezierCurveTo(0.10, 0.525, -0.10, 0.525, -0.195, 0.455);
-          ctx.bezierCurveTo(-0.285, 0.38, -0.30, 0.20, -0.27, 0.055);
-          ctx.closePath();
-        };
-
-        // Soft shadow where the muzzle meets the face.
-        var shade = ctx.createRadialGradient(0, 0.22, 0.14, 0, 0.22, 0.44);
-        shade.addColorStop(0, 'rgba(120,48,6,0.26)');
-        shade.addColorStop(1, 'rgba(120,48,6,0)');
-        ctx.fillStyle = shade;
-        ctx.fillRect(-0.5, -0.12, 1, 0.78);
-
-        snout();
-        var skin = ctx.createLinearGradient(0, -0.075, 0, 0.52);
-        skin.addColorStop(0, '#f2cdaa');
-        skin.addColorStop(0.42, '#ecc09b');
-        skin.addColorStop(0.8, '#f0dcae');
-        skin.addColorStop(1, '#f6ecc6');
-        ctx.fillStyle = skin;
-        ctx.fill();
-
-        ctx.save();
-        snout();
-        ctx.clip();
-        // Fade the top edge into the fur so the muzzle grows out of the face
-        // rather than sitting on it like a mask.
-        var blend = ctx.createLinearGradient(0, -0.08, 0, 0.085);
-        blend.addColorStop(0, 'rgba(214,104,34,0.8)');
-        blend.addColorStop(0.6, 'rgba(226,148,90,0.24)');
-        blend.addColorStop(1, 'rgba(230,160,100,0)');
-        ctx.fillStyle = blend;
-        ctx.fillRect(-0.38, -0.09, 0.76, 0.2);
-        fillEllipse(ctx, 0, 0.055, 0.20, 0.105, 0, 'rgba(214,150,120,0.30)');
-        fillEllipse(ctx, 0, 0.03, 0.185, 0.085, 0, 'rgba(255,236,216,0.45)');
-        fillEllipse(ctx, 0, 0.30, 0.185, 0.085, 0, 'rgba(255,246,214,0.35)');
-        ctx.restore();
-
-        snout();
-        ctx.strokeStyle = 'rgba(150,86,46,0.22)';
-        ctx.lineWidth = 0.011;
-        ctx.stroke();
       }
     }),
 
