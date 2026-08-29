@@ -25,5 +25,14 @@
     "offset": [-0.023, -0.611, 0],
     "rotation": [0, 0, 0],
     "tint": "#4a352c"
+  },
+  {
+    "id": "niumama",
+    "name": "NiuMama",
+    "file": "niumama.glb",
+    "scale": 2.03,
+    "offset": [0.006, -0.443, 0],
+    "rotation": [0, 0, 0],
+    "tint": "#d99a26"
   }
 ]
