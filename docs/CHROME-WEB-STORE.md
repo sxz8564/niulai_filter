@@ -7,8 +7,12 @@ cannot be automated from the repository.
 
 ```bash
 npm run package        # dist/critter-cam-<version>.zip
-npm run store:shots    # dist/store/*.png, 1280x800
+npm run store:shots    # screenshots, 1280x800
+npm run store:promo    # store icon and both promo tiles
 ```
+
+`store:promo` renders the avatar through the extension's own renderer, so the
+artwork cannot drift from what the product actually shows.
 
 `package` refuses to build if the manifest would fail review — an over-long
 name or description, a missing icon size, a `web_accessible_resources` entry
@@ -66,6 +70,39 @@ against it. A file left out of the package fails here rather than in review.
 > Tune the fit in the live preview — size, position, depth, smoothing — then
 > join a meeting. Reload a meeting tab you already had open, because the camera
 > is hooked as the page loads.
+
+## Graphics
+
+Every file below is produced by `npm run store:promo` (and `store:shots`) into
+`dist/store/`, at exactly the sizes the dashboard accepts.
+
+| Field | File | Size |
+| --- | --- | --- |
+| Store icon | `icon-128.png` | 128 x 128 |
+| Screenshots | `1-live-preview.png`, `2-controls.png` | 1280 x 800 |
+| Small promo tile | `promo-440x280.png` | 440 x 280 |
+| Marquee promo tile | `promo-1400x560.png` | 1400 x 560 |
+
+The marquee tile is optional, and only matters if the store ever features the
+extension — but it costs nothing to supply and a listing without one looks
+unfinished next to those that have it.
+
+## URLs
+
+| Field | Use |
+| --- | --- |
+| Homepage / Official URL | `https://github.com/sxz8564/niulai_filter` |
+| Support URL | `https://github.com/sxz8564/niulai_filter/issues` |
+| Privacy policy | `https://github.com/sxz8564/niulai_filter/blob/main/PRIVACY.md` |
+
+All three need the repository to be public — a URL the reviewer cannot open is
+a rejection.
+
+One caveat on the official URL: where the dashboard asks for a *verified*
+domain, github.com cannot be verified, because domain verification goes through
+Google Search Console and you do not own github.com. If you hit that, publish
+the repository to GitHub Pages — `sxz8564.github.io` is a domain you can verify
+there — and point the field at that instead.
 
 ## Dashboard answers
 

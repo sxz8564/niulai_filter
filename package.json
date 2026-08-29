@@ -9,6 +9,7 @@
     "test:smoke": "node tools/smoke-test.mjs",
     "package": "node tools/package.mjs",
     "store:shots": "node tools/make-store-shots.mjs",
+    "store:promo": "node tools/make-promo.mjs",
     "icons": "node tools/make-icons.mjs",
     "build:three": "esbuild tools/three-entry/entry.js --bundle --minify --format=iife --global-name=THREE --outfile=vendor/three/three.iife.js --legal-comments=eof",
     "validate:avatar": "node tools/validate-avatar.mjs",
