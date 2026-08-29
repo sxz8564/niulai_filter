@@ -172,12 +172,43 @@ check('track keeps the camera label', !!result.trackLabel, JSON.stringify(result
 check('filtered stream plays', result.videoSize[0] > 0, result.videoSize.join('×'));
 check('host page has no script errors', meetErrors.length === 0, meetErrors[0]);
 
-// Pin the head and confirm it lands in the outgoing stream, not just the preview.
+/*
+ * Pin the head and confirm it lands in the outgoing stream, not just the
+ * preview. The default avatar is an imported model, so this also covers the
+ * path nothing else does: the content script reads the registry and the .glb
+ * from extension storage and hands the bytes to the page, which parses and
+ * renders them in a world with no chrome.* at all.
+ */
 await context.backgroundPages();
 await preview.evaluate(() => chrome.storage.sync.set({
-  settings: { enabled: true, manual: true, animal: 'panda', size: 1.9 }
+  settings: { enabled: true, manual: true, animal: 'niulai', size: 1.9 }
 }));
-await meet.waitForTimeout(1500);
+
+// Software GL plus a 500 KB model with textures: give it room, but stop as
+// soon as the head is painted.
+let outgoing = { avatar: 0, total: 0 };
+for (let i = 0; i < 30; i++) {
+  await meet.waitForTimeout(500);
+  outgoing = await meet.evaluate(() => {
+    const video = document.getElementById('v');
+    const canvas = document.createElement('canvas');
+    canvas.width = 160;
+    canvas.height = 90;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let avatar = 0;
+    for (let p = 0; p < data.length; p += 4) {
+      const [r, g, b] = [data[p], data[p + 1], data[p + 2]];
+      // The fake camera is saturated green; the avatar is orange fur.
+      if (r > 110 && r > g * 1.3 && g > b) avatar++;
+    }
+    return { avatar, total: (canvas.width * canvas.height) };
+  });
+  if (outgoing.avatar > 300) break;
+}
+check('imported model reaches the outgoing stream', outgoing.avatar > 300,
+  `${outgoing.avatar} avatar pixels of ${outgoing.total}`);
 await meet.locator('#v').screenshot({ path: join(outDir, 'meet-output.png') });
 
 console.log(`\nscreenshots in ${outDir}`);
