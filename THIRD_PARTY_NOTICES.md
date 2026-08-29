@@ -18,7 +18,25 @@ code and the filter has to keep working offline.
 - Copyright 2023 The MediaPipe Authors
 - Licence: Apache License 2.0 — https://www.apache.org/licenses/LICENSE-2.0
 
+## Three.js
+
+- File: `vendor/three/three.iife.js`
+- Package: `three` 0.185.1, tree-shaken to the classes this extension uses
+- Copyright 2010-2025 Three.js Authors
+- Licence: MIT — https://github.com/mrdoob/three.js/blob/dev/LICENSE
+
+The bundle keeps its licence banner; `npm run build:three` reproduces it.
+
 A copy of the Apache License 2.0 is included in `vendor/LICENSE-Apache-2.0.txt`.
 
+## Niulai
+
+- File: `models/avatars/niulai.glb`
+- The character is the repository owner's own. The mesh was generated with
+  Meshy AI from that design, then cropped, retextured and rigged by the tools
+  in `tools/`. Check the terms of whichever generator plan produced a model
+  before redistributing it.
+
 Everything else in this repository — the animal artwork, the camera pipeline
-and the interface — is covered by the licence in `LICENSE`.
+and the interface — is covered by the licence in `LICENSE`, which is MIT: it
+lets anyone reuse it, the character included.
