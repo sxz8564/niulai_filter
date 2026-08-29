@@ -200,6 +200,24 @@ muzzle       0.001, -0.077, 0.125  y -0.155..0.032
 only way to judge one. Tune with `--jaw`, `--blink`, `--brow`, `--smile`, and
 `--hinge` if the jaw swings the whole muzzle instead of dropping the chin.
 
+#### Starting from a mouth that is already open
+
+A head sculpted mid-grin is the better raw material, because it has a real
+mouth: an interior, teeth, a tongue. No amount of deforming a sealed muzzle
+will invent those — the best a closed sculpt gives is a crease that deepens.
+
+`--close` swings the jaw shut to make the resting pose and makes the authored
+geometry the `jawOpen` target, so opening the mouth restores exactly what was
+sculpted:
+
+```bash
+node tools/rig-avatar.mjs open-mouth.glb rigged.glb --close 13
+```
+
+The angle is the one that just closes the lips — too little leaves it ajar at
+rest, too much folds the chin into the muzzle. Sweep three values and look;
+on the head shipped here it was 13°.
+
 An authored rig always beats a derived one, so ask for morph targets first;
 this is what to do when the answer is no.
 

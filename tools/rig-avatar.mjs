@@ -57,6 +57,13 @@ const bandFraction = opt('band', 0.22);
 const blinkAmount = opt('blink', 1);
 const browLift = opt('brow', 0.035);
 const smileAmount = opt('smile', 1.1);
+/*
+ * A head sculpted with its mouth open is the better starting point: it has a
+ * real cavity, which no amount of deforming a closed surface will invent. With
+ * --close the jaw is swung shut to make the resting pose, and jawOpen returns
+ * the mesh to the shape the sculptor actually modelled.
+ */
+const closeDegrees = opt('close', 0);
 
 /* ------------------------------------------------------------ read glTF */
 
@@ -189,7 +196,9 @@ const centroid = (list) => [0, 1, 2].map((a) => list.reduce((s, v) => s + v.p[a]
 
 // The face is the front half; anything behind that is skull, ears and neck.
 const frontOf = (list, depth) => list.filter((v) => v.p[2] > bounds.min[2] + size[2] * depth);
-const darkFront = frontOf(all.filter((v) => v.tag === DARK), 0.55);
+// An open mouth is dark too, so eyes are looked for in the upper face only.
+const upper = bounds.min[1] + size[1] * 0.45;
+const darkFront = frontOf(all.filter((v) => v.tag === DARK && v.p[1] > upper), 0.55);
 const paleFront = frontOf(all.filter((v) => v.tag === PALE), 0.55);
 
 /*
@@ -213,6 +222,21 @@ const eyes = sides.map((side) => {
     radius: Math.max(0.05 * unit, (Math.max(...xs) - Math.min(...xs)) * 0.75)
   };
 });
+
+/*
+ * Faces are symmetric even when the texture is not: one eye can be caught in
+ * shadow and come back smaller, which would then blink less than the other.
+ * Mirror-average the pair so both close by the same amount.
+ */
+if (eyes[0] && eyes[1]) {
+  const x = (Math.abs(eyes[0].centre[0]) + Math.abs(eyes[1].centre[0])) / 2;
+  const y = (eyes[0].centre[1] + eyes[1].centre[1]) / 2;
+  const z = (eyes[0].centre[2] + eyes[1].centre[2]) / 2;
+  const radius = Math.max(eyes[0].radius, eyes[1].radius);
+  eyes[0].centre = [x, y, z];
+  eyes[1].centre = [-x, y, z];
+  eyes[0].radius = eyes[1].radius = radius;
+}
 
 const muzzle = paleFront.length > 20 ? {
   centre: centroid(paleFront),
@@ -310,8 +334,41 @@ function smile(p) {
   return [Math.sign(p[0]) * unit * 0.03 * weight, unit * 0.05 * weight, 0];
 }
 
+/*
+ * Swinging the jaw shut to make a resting pose. The authored positions become
+ * the jawOpen target, so opening the mouth restores the sculpted cavity rather
+ * than stretching a closed surface over it.
+ */
+function closeJaw() {
+  for (const entry of primitives) {
+    const count = entry.position.length / 3;
+    const authored = Float32Array.from(entry.position);
+    const normal = entry.prim.attributes.NORMAL !== undefined ? readAccessor(entry.prim.attributes.NORMAL) : null;
+    for (let i = 0; i < count; i++) {
+      const p = [authored[i * 3], authored[i * 3 + 1], authored[i * 3 + 2]];
+      const weight = jawWeight(p);
+      if (weight <= 0) continue;
+      const angle = -(closeDegrees * Math.PI / 180) * weight;
+      const c = Math.cos(angle), sn = Math.sin(angle);
+      const dy = p[1] - hinge.y, dz = p[2] - hinge.z;
+      entry.position[i * 3 + 1] = hinge.y + dy * c - dz * sn;
+      entry.position[i * 3 + 2] = hinge.z + dy * sn + dz * c;
+      // Rotate the normals with the surface; the deformation is near-rigid
+      // within the jaw, so this is right where it matters and small where not.
+      if (normal) {
+        const ny = normal[i * 3 + 1], nz = normal[i * 3 + 2];
+        normal[i * 3 + 1] = ny * c - nz * sn;
+        normal[i * 3 + 2] = ny * sn + nz * c;
+      }
+    }
+    entry.authored = authored;
+    entry.newNormal = normal;
+  }
+}
+if (closeDegrees) closeJaw();
+
 const SHAPES = [
-  { name: 'jawOpen', fn: (p) => jawOpen(p) },
+  { name: 'jawOpen', fn: (p) => jawOpen(p), authored: !!closeDegrees },
   { name: 'eyeBlinkLeft', fn: (p) => blink(p, eyes[0]) },
   { name: 'eyeBlinkRight', fn: (p) => blink(p, eyes[1]) },
   { name: 'browInnerUp', fn: (p) => [0, 1].reduce((acc, i) => {
@@ -345,6 +402,38 @@ function addAccessor(typed, min, max) {
   return json.accessors.length - 1;
 }
 
+/*
+ * A deformed base has to go back into the file. Generator exports are tightly
+ * packed and non-interleaved, so the view can be overwritten in place; anything
+ * shared or strided gets a fresh view instead of being corrupted.
+ */
+const replacedViews = new Map();
+function replaceAttribute(accessorIndex, typed) {
+  const acc = json.accessors[accessorIndex];
+  const view = json.bufferViews[acc.bufferView];
+  const buf = Buffer.from(typed.buffer, typed.byteOffset, typed.byteLength);
+  const exclusive = !view.byteStride && !(acc.byteOffset || 0) && view.byteLength === buf.length;
+  if (exclusive) {
+    replacedViews.set(acc.bufferView, buf);
+  } else {
+    json.bufferViews.push({ buffer: 0, byteOffset: cursor, byteLength: buf.length, target: 34962 });
+    parts.push(buf);
+    cursor += buf.length;
+    const pad = (4 - (cursor % 4)) % 4;
+    if (pad) { parts.push(Buffer.alloc(pad)); cursor += pad; }
+    acc.bufferView = json.bufferViews.length - 1;
+    acc.byteOffset = 0;
+  }
+  if (acc.type === 'VEC3') {
+    const min = [Infinity, Infinity, Infinity];
+    const max = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < typed.length; i += 3) {
+      for (let a = 0; a < 3; a++) { min[a] = Math.min(min[a], typed[i + a]); max[a] = Math.max(max[a], typed[i + a]); }
+    }
+    acc.min = min; acc.max = max;
+  }
+}
+
 const moved = SHAPES.map(() => 0);
 for (const entry of primitives) {
   const count = entry.position.length / 3;
@@ -355,16 +444,35 @@ for (const entry of primitives) {
     const max = [-Infinity, -Infinity, -Infinity];
     for (let i = 0; i < count; i++) {
       const p = [entry.position[i * 3], entry.position[i * 3 + 1], entry.position[i * 3 + 2]];
-      const d = shape.fn(p);
+      // With --close, jawOpen is not a guess: it is the distance back to the
+      // positions the sculptor authored.
+      const d = shape.authored && entry.authored
+        ? [0, 1, 2].map((a) => entry.authored[i * 3 + a] - p[a])
+        : shape.fn(p);
       delta.set(d, i * 3);
       if (Math.hypot(d[0], d[1], d[2]) > 1e-6) moved[s]++;
       for (let a = 0; a < 3; a++) { min[a] = Math.min(min[a], d[a]); max[a] = Math.max(max[a], d[a]); }
     }
     targets.push({ POSITION: addAccessor(delta, min, max) });
   });
+  if (entry.authored) {
+    replaceAttribute(entry.prim.attributes.POSITION, entry.position);
+    if (entry.newNormal && entry.prim.attributes.NORMAL !== undefined) {
+      replaceAttribute(entry.prim.attributes.NORMAL, entry.newNormal);
+    }
+  }
   entry.prim.targets = targets;
   entry.mesh.weights = SHAPES.map(() => 0);
   entry.mesh.extras = { ...(entry.mesh.extras || {}), targetNames: SHAPES.map((s) => s.name) };
+}
+
+// Splice any in-place attribute replacements into the original chunk.
+if (replacedViews.size) {
+  const patched = Buffer.from(bin);
+  for (const [index, buf] of replacedViews) {
+    buf.copy(patched, json.bufferViews[index].byteOffset || 0);
+  }
+  parts[0] = patched;
 }
 
 const binOut = Buffer.concat(parts);

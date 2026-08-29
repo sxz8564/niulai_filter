@@ -7,5 +7,14 @@
     "offset": [0, -0.02, 0],
     "rotation": [0, 0, 0],
     "tint": "#e0762a"
+  },
+  {
+    "id": "joy-goblin",
+    "name": "Joy Goblin",
+    "file": "joy-goblin.glb",
+    "scale": 1.0,
+    "offset": [0, -0.02, 0],
+    "rotation": [0, 0, 0],
+    "tint": "#e0762a"
   }
 ]

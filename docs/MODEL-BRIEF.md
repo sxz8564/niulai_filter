@@ -82,6 +82,12 @@ ARKit and Ready Player Me naming is accepted unchanged — `eyeBlink_L`,
 name the jaw bone or node `Jaw` and it will be rotated instead. Any channel
 omitted is skipped: a model with only `jawOpen` still animates its mouth.
 
+If neither is possible, **sculpt the mouth open** — modelled with an interior:
+lips parted, teeth and tongue as geometry. The jaw can then be swung shut to
+make the resting pose, and opening it restores what you sculpted. Nothing can
+add a mouth cavity to a head sculpted with its lips sealed, so that choice is
+made once, by you, and cannot be undone later.
+
 ## Self-check before returning the file
 
 - [ ] Single `.glb`, textures embedded, no Draco or Meshopt
