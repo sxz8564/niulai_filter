@@ -16,5 +16,14 @@
     "offset": [0.017, -0.486, 0],
     "rotation": [0, 0, 0],
     "tint": "#c2a23a"
+  },
+  {
+    "id": "wolfwolf",
+    "name": "Wolfwolf",
+    "file": "wolfwolf.glb",
+    "scale": 2.556,
+    "offset": [-0.023, -0.611, 0],
+    "rotation": [0, 0, 0],
+    "tint": "#4a352c"
   }
 ]

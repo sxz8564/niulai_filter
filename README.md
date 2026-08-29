@@ -12,9 +12,9 @@ frames on a canvas, and hands the meeting the filtered stream instead.
 
 ## What it does
 
-- **Niulai and Baola**, textured 3D models with rigs: mouths that open — in
-  Niulai's case onto a modelled interior — eyes that blink one at a time, brows
-  that lift.
+- **Niulai, Baola and Wolfwolf**, textured 3D models with rigs: mouths that
+  open — in Niulai's case onto a modelled interior — eyes that blink one at a
+  time, brows that lift.
 - **Twelve more animals** built in — shiba, cat, fox, wolf, panda, bear, koala,
   tiger, bunny, pig, frog and monkey — all lit 3D, so the head has real volume
   and turns with you in three dimensions.
