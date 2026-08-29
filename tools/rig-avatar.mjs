@@ -11,6 +11,8 @@
  *                     0.05). Higher swings the whole muzzle, which reads as a
  *                     lengthening face rather than an opening mouth
  *     --band <f>      how far up the head the jaw rotation fades (default 0.22)
+ *     --mouth <y>     the mouth's height in model units, when the tool cannot
+ *                     find it. --report prints what it did find
  *     --head <f>      fraction of the model's height, from the top, that is
  *                     head. 1 for a head-only crop; on a bust, the share above
  *                     the shoulders. Everything below it holds still
@@ -225,9 +227,68 @@ const centroid = (list) => [0, 1, 2].map((a) => list.reduce((s, v) => s + v.p[a]
 
 // The face is the front half; anything behind that is skull, ears and neck.
 const frontOf = (list, depth) => list.filter((v) => v.p[2] > head.min[2] + size[2] * depth);
-// An open mouth is dark too, so eyes are looked for in the upper face only.
-const upper = head.min[1] + size[1] * 0.45;
-const darkFront = frontOf(all.filter((v) => v.tag === DARK && v.p[1] > upper), 0.55);
+/*
+ * A face's dark marks stack up in bands: eyes above, mouth below. Finding
+ * those bands and taking them in order beats cutting the head at a fixed
+ * fraction of its height — horns, tall ears or a crest push the top of the
+ * head up, the cut then lands below the eyes, and everything downstream
+ * follows the wrong feature. This model has horns and its eyes sit at 11% of
+ * the head's height; a 45% cut missed them entirely.
+ */
+function darkBands() {
+  const candidates = frontOf(all.filter((v) => v.tag === DARK && v.p[1] >= neckY), 0.5);
+  if (candidates.length < 12) return [];
+  const BINS = 30;
+  const lo = head.min[1], span = size[1] || 1e-6;
+  const bins = Array.from({ length: BINS }, () => []);
+  for (const v of candidates) {
+    bins[Math.min(BINS - 1, Math.max(0, Math.floor(((v.p[1] - lo) / span) * BINS)))].push(v);
+  }
+  const peak = Math.max(...bins.map((b) => b.length));
+  const floor = Math.max(2, peak * 0.15);
+  const bands = [];
+  let run = null;
+  for (let i = 0; i < BINS; i++) {
+    if (bins[i].length >= floor) {
+      run = run || { members: [] };
+      run.members = run.members.concat(bins[i]);
+    } else if (run) { bands.push(run); run = null; }
+  }
+  if (run) bands.push(run);
+  return bands.map((band) => {
+    const ys = band.members.map((v) => v.p[1]);
+    const left = band.members.filter((v) => v.p[0] > 0), right = band.members.filter((v) => v.p[0] < 0);
+    return {
+      members: band.members, top: Math.max(...ys), bottom: Math.min(...ys),
+      centre: (Math.max(...ys) + Math.min(...ys)) / 2,
+      // A pair straddles the centre line with a gap; a mouth sits across it.
+      paired: left.length >= 3 && right.length >= 3 &&
+        Math.min(...left.map((v) => v.p[0])) > size[0] * 0.02 &&
+        Math.max(...right.map((v) => v.p[0])) < -size[0] * 0.02
+    };
+  }).sort((a, b) => b.centre - a.centre);
+}
+const bands = darkBands();
+
+/*
+ * Cutting the head at 45% of its height and taking the dark marks above works
+ * on every face whose bounding box is the face. It is only when something
+ * tall — horns here — lifts the top of the box that the cut lands below the
+ * eyes and finds nothing, and the band search takes over.
+ */
+let upper = head.min[1] + size[1] * 0.45;
+let darkFront = frontOf(all.filter((v) => v.tag === DARK && v.p[1] > upper), 0.55);
+let eyeBand = null;
+const paired = function (list) {
+  return list.filter((v) => v.p[0] > 0).length >= 3 && list.filter((v) => v.p[0] < 0).length >= 3;
+};
+if (!paired(darkFront)) {
+  eyeBand = bands.filter((b) => b.paired)[0] || null;
+  if (eyeBand) {
+    upper = eyeBand.bottom - size[1] * 0.02;
+    darkFront = eyeBand.members;
+  }
+}
 // Above the neck only: a pale chest or bib is as pale as a muzzle, and on a
 // bust it would drag the mouth line down into the chest.
 const paleFront = frontOf(all.filter((v) => v.tag === PALE && v.p[1] >= neckY), 0.55);
@@ -292,8 +353,24 @@ const eyeLevel = eyes.filter(Boolean).length
  * over-estimates it badly on a small-mouthed face — the jaw then swings a
  * region several times the size of the mouth.
  */
+/** The next dark band below the eyes that crosses the centre line. */
+function mouthFromBands() {
+  const anchor = eyeBand || bands.filter(function (b) { return b.paired; })[0];
+  if (!anchor) return null;
+  const below = bands.filter(function (b) {
+    return !b.paired && b.centre < anchor.bottom - size[1] * 0.02;
+  })[0];
+  if (!below || below.members.length < 8) return null;
+  if (below.top - below.bottom > size[1] * 0.45) return null;
+  const xs = below.members.map(function (v) { return Math.abs(v.p[0]); });
+  return {
+    top: below.top, bottom: below.bottom, centre: below.centre, how: 'the dark band below the eyes',
+    height: below.top - below.bottom, halfWidth: Math.max.apply(null, xs), count: below.members.length
+  };
+}
+
 function findMouth() {
-  if (!muzzle) return null;
+  if (!muzzle) return mouthFromBands();
   const below = eyeLevel - size[1] * 0.12;
   const halfWidth = Math.max(muzzle.halfWidth, size[0] * 0.22) * 1.05;
   const candidates = all.filter(function (v) {
@@ -301,7 +378,7 @@ function findMouth() {
       Math.abs(v.p[0]) <= halfWidth &&
       v.p[2] > head.min[2] + size[2] * 0.55;
   });
-  if (candidates.length < 8) return null;
+  if (candidates.length < 8) return mouthFromBands();
 
   /*
    * The nostrils are dark too, and they sit right above the mouth, so taking
@@ -328,8 +405,8 @@ function findMouth() {
   const yBottom = lo + (span * bottom) / BINS;
 
   const inside = candidates.filter(function (v) { return v.p[1] >= yBottom && v.p[1] <= yTop; });
-  if (inside.length < 8) return null;
-  if (yTop - yBottom > size[1] * 0.45) return null;
+  if (inside.length < 8) return mouthFromBands();
+  if (yTop - yBottom > size[1] * 0.45) return mouthFromBands();
   const xs = inside.map(function (v) { return Math.abs(v.p[0]); });
   return {
     top: yTop, bottom: yBottom, centre: (yTop + yBottom) / 2, how: 'the dark band on the muzzle',
@@ -344,14 +421,33 @@ const mouth = findMouth();
  * Without a modelled opening there is nothing to measure and the muzzle box is
  * the best available guess.
  */
-const mouthLine = mouth ? mouth.centre
+/*
+ * With no dark mouth to find, the distance between the eyes is a better ruler
+ * than the muzzle's bounding box: horns, ears or a crest inflate the box,
+ * while the eyes stay where the face is. Across the models here the mouth sits
+ * about one eye-separation below the eye line — 0.86 to 1.19 of it — so that
+ * is the estimate, and the box is the last resort.
+ */
+const eyeGap = eyes[0] && eyes[1] ? Math.abs(eyes[0].centre[0] - eyes[1].centre[0]) : 0;
+// --mouth says where the mouth is outright, for a face that defeats every
+// signal: no dark band to find, and a snout long enough that the estimate
+// from eye separation lands well above the real one. --report prints the
+// heights to pick from.
+const mouthOverride = opt('mouth', null);
+const mouthLine = mouthOverride !== null ? mouthOverride
+  : mouth ? mouth.centre
+  : eyeGap > 0 ? eyeLevel - eyeGap
   : muzzle ? muzzle.bottom + (muzzle.top - muzzle.bottom) * 0.30
   : eyeLevel - size[1] * 0.35;
 // The band is how far the swing takes to reach full. Sized to the mouth so a
 // small mouth moves a small region, with a floor: measured exactly, the ramp
 // is a knife edge and the surface creases where it lands.
-const hinge = mouth
+const hinge = mouthOverride !== null
+  ? { y: mouthLine + size[1] * 0.02, z: head.min[2] + size[2] * 0.35, band: size[1] * 0.06 }
+  : mouth
   ? { y: mouth.top, z: head.min[2] + size[2] * 0.35, band: Math.max(mouth.height * 1.6, size[1] * 0.06) }
+  : eyeGap > 0
+  ? { y: mouthLine + size[1] * 0.02, z: head.min[2] + size[2] * 0.35, band: size[1] * 0.06 }
   : {
       y: mouthLine + (eyeLevel - mouthLine) * hingeFraction,
       z: head.min[2] + size[2] * 0.35,

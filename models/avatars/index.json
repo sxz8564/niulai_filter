@@ -34,5 +34,14 @@
     "offset": [0.006, -0.443, 0],
     "rotation": [0, 0, 0],
     "tint": "#d99a26"
+  },
+  {
+    "id": "niubaba",
+    "name": "NiuBaba",
+    "file": "niubaba.glb",
+    "scale": 1.731,
+    "offset": [-0.005, -0.51, 0],
+    "rotation": [0, 0, 0],
+    "tint": "#d2731d"
   }
 ]
