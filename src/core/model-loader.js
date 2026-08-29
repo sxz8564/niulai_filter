@@ -99,6 +99,22 @@
     return found;
   }
 
+  /** The bounding box of the geometry as authored, ignoring morph targets. */
+  function restingBox(three, scene) {
+    var box = new three.Box3();
+    var vertex = new three.Vector3();
+    scene.updateMatrixWorld(true);
+    scene.traverse(function (node) {
+      var position = node.isMesh && node.geometry && node.geometry.attributes.position;
+      if (!position) return;
+      for (var i = 0; i < position.count; i++) {
+        vertex.fromBufferAttribute(position, i).applyMatrix4(node.matrixWorld);
+        box.expandByPoint(vertex);
+      }
+    });
+    return box;
+  }
+
   /**
    * Centres and scales a loaded scene so one unit is one head width, matching
    * what the renderer expects of the built-in animals.
@@ -113,7 +129,10 @@
     scene.rotation.set(rot[0] * DEG, rot[1] * DEG, rot[2] * DEG);
     scene.updateMatrixWorld(true);
 
-    var box = new three.Box3().setFromObject(scene);
+    // Measure the rest pose only. Box3.setFromObject includes the extremes of
+    // every morph target, so a rigged head would be fitted to its widest open
+    // mouth and sit smaller and off-centre next to the same head unrigged.
+    var box = restingBox(three, scene);
     var size = box.getSize(new three.Vector3());
     var centre = box.getCenter(new three.Vector3());
 

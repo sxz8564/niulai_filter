@@ -381,6 +381,10 @@
         -(pose.roll || 0)
       );
 
+      // Imported models drive their own expression channels; the built-in
+      // animals have none and are posed piece by piece below.
+      if (parts.animate) parts.animate(params);
+
       if (parts.jaw) {
         parts.jaw.rotation.x = -(params.jawOpen || 0) * parts.jawPivot.maxAngle;
       }

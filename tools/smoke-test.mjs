@@ -116,6 +116,27 @@ check('glTF model imports and fits', !modelReport.error && modelReport.measured 
 check('model rig is detected by name', !modelReport.error && modelReport.channels?.jawOpen > 0,
   modelReport.error || `jawOpen targets: ${modelReport.channels?.jawOpen}`);
 
+// Detecting the rig is not the same as driving it: the renderer once posed
+// imported heads without ever calling their animate(), so nothing moved.
+const driven = await preview.evaluate(async () => {
+  const NS = globalThis.__CritterCam;
+  const buffer = await (await fetch('../../docs/reference/example-head.glb')).arrayBuffer();
+  const built = await NS.avatarModels.parse(buffer, { id: 'smoke-driven' });
+  built.parts.animate({ jawOpen: 1 });
+  let open = 0;
+  built.group.traverse((node) => {
+    if (node.morphTargetInfluences) open = Math.max(open, ...node.morphTargetInfluences);
+  });
+  built.parts.animate({ jawOpen: 0 });
+  let shut = 0;
+  built.group.traverse((node) => {
+    if (node.morphTargetInfluences) shut = Math.max(shut, ...node.morphTargetInfluences);
+  });
+  return { open, shut };
+}).catch((error) => ({ error: String(error.message || error) }));
+check('expression params reach the model', driven.open === 1 && driven.shut === 0,
+  driven.error || `influence ${driven.shut} -> ${driven.open}`);
+
 /* -------------------------------------- 2. getUserMedia patch on a real host */
 
 const meet = await context.newPage();

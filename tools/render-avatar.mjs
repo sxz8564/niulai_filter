@@ -11,14 +11,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const [inGlb, outPng] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const rigMode = argv.includes('--rig');
+const [inGlb, outPng] = argv.filter((a) => a !== '--rig');
 if (!inGlb || !outPng) {
-  console.error('usage: node tools/render-avatar.mjs <model.glb> <out.png>');
+  console.error('usage: node tools/render-avatar.mjs <model.glb> <out.png> [--rig]');
   process.exit(2);
 }
 const glb = readFileSync(path.resolve(inGlb));
 
-const PAGE = `<!doctype html><meta charset="utf-8">
+const VIEWS = `<!doctype html><meta charset="utf-8">
 <style>body{margin:0;background:#5a83a8}canvas{display:block}</style>
 <canvas id="out" width="1000" height="300"></canvas>
 <script src="/vendor/three/three.iife.js"></script>
@@ -56,6 +58,72 @@ const PAGE = `<!doctype html><meta charset="utf-8">
 })().catch(e => { document.title = 'error: ' + e.message; });
 </script>`;
 
+/*
+ * Rig sheet: one row per morph target, at rest, half and full, so a shape can
+ * be judged by what it does rather than by its name.
+ */
+const RIG = `<!doctype html><meta charset="utf-8">
+<style>body{margin:0;background:#5a83a8;font:13px system-ui,sans-serif;color:#fff}
+canvas{display:block}</style>
+<canvas id="out"></canvas>
+<script src="/vendor/three/three.iife.js"></script>
+<script>
+(async () => {
+  const buf = await (await fetch('/__model.glb')).arrayBuffer();
+  const gltf = await new Promise((res, rej) => new THREE.GLTFLoader().parse(buf, '', res, rej));
+
+  let names = [];
+  gltf.scene.traverse(n => {
+    if (n.isMesh && n.morphTargetDictionary) names = Object.keys(n.morphTargetDictionary);
+  });
+  if (!names.length) { document.title = 'error: no morph targets'; return; }
+
+  const CELL = 240, STEPS = [0, 0.5, 1];
+  const out = document.getElementById('out');
+  out.width = CELL * STEPS.length + 140;
+  out.height = CELL * names.length;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#5a83a8'; ctx.fillRect(0, 0, out.width, out.height);
+
+  const canvas = document.createElement('canvas');
+  const R = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true, preserveDrawingBuffer:true});
+  R.setSize(CELL, CELL, false); R.setClearColor(0,0);
+  const scene = new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x555555,1.1));
+  const key = new THREE.DirectionalLight(0xffffff,1.4); key.position.set(-0.5,0.8,1); scene.add(key);
+  const cam = new THREE.OrthographicCamera(-CELL/2, CELL/2, CELL/2, -CELL/2, -2000, 2000);
+
+  const holder = new THREE.Group();
+  holder.add(gltf.scene);
+  const box = new THREE.Box3().setFromObject(gltf.scene);
+  const size = box.getSize(new THREE.Vector3()), centre = box.getCenter(new THREE.Vector3());
+  gltf.scene.position.sub(centre);
+  holder.scale.setScalar(CELL * 0.8 / Math.max(size.x, size.y, size.z));
+  scene.add(holder);
+
+  const meshes = [];
+  gltf.scene.traverse(n => { if (n.isMesh && n.morphTargetInfluences) meshes.push(n); });
+
+  for (let row = 0; row < names.length; row++) {
+    for (let col = 0; col < STEPS.length; col++) {
+      meshes.forEach(m => m.morphTargetInfluences.fill(0));
+      meshes.forEach(m => {
+        const index = m.morphTargetDictionary[names[row]];
+        if (index !== undefined) m.morphTargetInfluences[index] = STEPS[col];
+      });
+      R.render(scene, cam);
+      ctx.drawImage(canvas, 140 + col * CELL, row * CELL);
+    }
+    ctx.fillStyle = '#fff';
+    ctx.font = '15px system-ui, sans-serif';
+    ctx.fillText(names[row], 12, row * CELL + CELL / 2);
+  }
+  document.title = 'rendered';
+})().catch(e => { document.title = 'error: ' + e.message; });
+</script>`;
+
+const PAGE = rigMode ? RIG : VIEWS;
+
 const types = { '.html':'text/html', '.js':'text/javascript', '.glb':'model/gltf-binary', '.json':'application/json' };
 const server = createServer((req, res) => {
   const url = decodeURIComponent(req.url.split('?')[0]);
@@ -89,4 +157,4 @@ if (title.startsWith('error') || errs.length) {
   console.error(title, errs.join('\n'));
   process.exit(1);
 }
-console.log(outPng + '  (front, left, back, right)');
+console.log(outPng + (rigMode ? '  (rest, half, full per shape)' : '  (front, left, back, right)'));

@@ -167,9 +167,45 @@ Geometry, materials and UVs are untouched — only the image bytes change, so it
 is safe to run after cropping. On the model shipped here, 1024px maps took the
 file from 5.0 MB to 311 KB with no visible difference at video-call size.
 
-`render-avatar.mjs` and `shrink-textures.mjs` need a browser; if Playwright
-cannot download its own Chromium, point `PLAYWRIGHT_CHROMIUM` at one already
-on disk.
+### Rigging a head that came back without one
+
+Most generators return a sculpt with no morph targets at all, and a face that
+never moves reads as a mask. Rather than re-prompting for a rig that may never
+arrive, build the shapes from the mesh that is already there:
+
+```bash
+node tools/rig-avatar.mjs head.glb rigged.glb
+node tools/render-avatar.mjs rigged.glb rig-sheet.png --rig
+```
+
+It writes the five channels this extension drives — `jawOpen`,
+`eyeBlinkLeft`, `eyeBlinkRight`, `browInnerUp`, `mouthSmile` — as deformations
+of the existing geometry: the lower face hinges about a pivot behind the
+muzzle, each eye region squashes about its own centre, the brow band lifts,
+the mouth corners lift and widen.
+
+The face is located by reading the base-colour texture. Every vertex is
+sampled at its own UV; on a character painted with dark eyes and brows against
+coloured fur, the dark pixels *are* the eyes and the pale ones the muzzle, and
+that is far more reliable than guessing from the silhouette. A model with no
+texture gets a jaw but no eyes — `--report` says what was found before you
+commit to it:
+
+```
+eye left     0.063, 0.021, 0.087  radius 0.036, 12 brow verts
+muzzle       0.001, -0.077, 0.125  y -0.155..0.032
+```
+
+`--rig` on the renderer draws each shape at rest, half and full, which is the
+only way to judge one. Tune with `--jaw`, `--blink`, `--brow`, `--smile`, and
+`--hinge` if the jaw swings the whole muzzle instead of dropping the chin.
+
+An authored rig always beats a derived one, so ask for morph targets first;
+this is what to do when the answer is no.
+
+`render-avatar.mjs`, `shrink-textures.mjs` and `rig-avatar.mjs` need a
+browser; if Playwright cannot download its own Chromium, point
+`PLAYWRIGHT_CHROMIUM` at one already on disk.
 
 ## 7. Testing a model
 
@@ -205,7 +241,7 @@ and reload the extension at `chrome://extensions`.
 | Lying on its back | Exported Z-up. Set `"rotation": [-90, 0, 0]`, or tick *+Y Up* on export |
 | Far too small | A full body was exported; the fit scales by total width. Export the head alone |
 | Sits too high or low | Adjust `offset[1]`, or use the popup's **Up / down** slider |
-| Mouth never opens | No matching morph target — check the preview report, then rename or set `morphs` |
+| Mouth never opens | No matching morph target — check the preview report, then rename, set `morphs`, or build the shapes with `tools/rig-avatar.mjs` |
 | Black or untextured | Textures referenced externally. Re-export with images embedded. A model with no materials at all is coloured by `tint` |
 | Faceted, like cut glass | The export had no normals. They are computed on load, but exporting them is better |
 | Does not appear in the picker | The `id` collides with a built-in animal — check the console and rename it |
