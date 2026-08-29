@@ -12,8 +12,8 @@ frames on a canvas, and hands the meeting the filtered stream instead.
 
 ## What it does
 
-- **Five rigged 3D characters** — Niulai, Baola, Wolfwolf, NiuMama and
-  NiuBaba —
+- **Six rigged 3D characters** — Niulai, Baola, Wolfwolf, NiuMama, NiuBaba and
+  XiaoNiao —
   textured, with mouths that open onto a modelled interior, eyes that blink one
   at a time, and brows that lift.
 - **Twelve more animals** built in — shiba, cat, fox, wolf, panda, bear, koala,

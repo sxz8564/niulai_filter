@@ -43,5 +43,14 @@
     "offset": [-0.005, -0.51, 0],
     "rotation": [0, 0, 0],
     "tint": "#d2731d"
+  },
+  {
+    "id": "xiaoniao",
+    "name": "XiaoNiao",
+    "file": "xiaoniao.glb",
+    "scale": 1.5,
+    "offset": [0, -0.212, 0],
+    "rotation": [0, 0, 0],
+    "tint": "#8c2f2a"
   }
 ]
