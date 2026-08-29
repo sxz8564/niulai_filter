@@ -38,19 +38,63 @@
       onStatus(status);
     }
 
-    function ensureWorker() {
-      if (worker) return worker;
-      publish({ state: 'loading', error: null });
-      try {
-        worker = new Worker(chrome.runtime.getURL('src/core/detector.worker.js'));
-      } catch (error) {
-        publish({ state: 'error', error: 'Could not start the detector worker: ' + error.message });
-        return null;
-      }
-      worker.onerror = function (event) {
+    /*
+     * Everything the worker needs, fetched here rather than there.
+     *
+     * A content script's isolated world builds workers against the *page's*
+     * origin, so `new Worker('chrome-extension://…')` is refused on every real
+     * site, and a blob worker cannot importScripts or fetch across origins
+     * either. But the content script itself may read its own extension's
+     * files. So it reads them all, hands the worker its code as a blob and its
+     * wasm as blob URLs, and nothing inside the worker ever crosses an origin.
+     *
+     * On an extension page — the preview, the popup — none of this is needed
+     * and the worker is loaded straight from its URL.
+     */
+    var EXTENSION_PAGE = location.protocol === 'chrome-extension:';
+    var LOADER_SENTINEL = 'crittercam:inlined-wasm-loader';
+
+    function workerFromBlob() {
+      var url = function (path) { return chrome.runtime.getURL(path); };
+      return Promise.all([
+        fetch(url('vendor/tasks-vision/vision_bundle.js')).then(function (r) { return r.text(); }),
+        fetch(url('vendor/tasks-vision/wasm/vision_wasm_internal.js')).then(function (r) { return r.text(); }),
+        fetch(url('src/core/detector.worker.js')).then(function (r) { return r.text(); }),
+        fetch(url('vendor/tasks-vision/wasm/vision_wasm_internal.wasm')).then(function (r) { return r.blob(); }),
+        fetch(url('models/face_landmarker.task')).then(function (r) { return r.arrayBuffer(); })
+      ]).then(function (parts) {
+        /*
+         * MediaPipe loads its wasm glue with importScripts. That would be a
+         * blob: URL here, which a page's script-src usually does not allow, so
+         * the glue is inlined ahead of the bundle and the import is answered
+         * from inside instead of over the network.
+         */
+        var preamble = 'self.__critterInlined = ' + JSON.stringify(LOADER_SENTINEL) + ';\n' +
+          'var __critterImport = self.importScripts.bind(self);\n' +
+          'self.importScripts = function () {\n' +
+          '  var rest = Array.prototype.filter.call(arguments, function (u) {\n' +
+          '    return String(u) !== self.__critterInlined;\n' +
+          '  });\n' +
+          '  if (rest.length) __critterImport.apply(self, rest);\n' +
+          '};\n';
+        var source = preamble + parts[1] + '\n;\n' + parts[0] + '\n;\n' + parts[2];
+        return {
+          worker: new Worker(URL.createObjectURL(new Blob([source], { type: 'text/javascript' }))),
+          init: {
+            type: 'init',
+            wasmLoaderPath: LOADER_SENTINEL,
+            wasmBinaryPath: URL.createObjectURL(parts[3]),
+            modelBuffer: parts[4]
+          }
+        };
+      });
+    }
+
+    function attachHandlers(instance) {
+      instance.onerror = function (event) {
         publish({ state: 'error', error: (event && event.message) || 'Detector worker crashed' });
       };
-      worker.onmessage = function (event) {
+      instance.onmessage = function (event) {
         var msg = event.data || {};
         if (msg.type === 'ready') {
           publish({ state: 'ready', delegate: msg.delegate, error: null });
@@ -72,12 +116,44 @@
           publish({ state: 'error', error: msg.message });
         }
       };
-      worker.postMessage({
-        type: 'init',
-        wasmDir: chrome.runtime.getURL('vendor/tasks-vision/wasm'),
-        modelUrl: chrome.runtime.getURL('models/face_landmarker.task')
+    }
+
+    var starting = false;
+
+    function ensureWorker() {
+      if (worker) return true;
+      if (starting) return true;
+      starting = true;
+      publish({ state: 'loading', error: null });
+
+      if (EXTENSION_PAGE) {
+        try {
+          worker = new Worker(chrome.runtime.getURL('src/core/detector.worker.js'));
+        } catch (error) {
+          starting = false;
+          publish({ state: 'error', error: 'Could not start the detector worker: ' + error.message });
+          return false;
+        }
+        attachHandlers(worker);
+        worker.postMessage({
+          type: 'init',
+          wasmDir: chrome.runtime.getURL('vendor/tasks-vision/wasm'),
+          modelUrl: chrome.runtime.getURL('models/face_landmarker.task')
+        });
+        starting = false;
+        return true;
+      }
+
+      workerFromBlob().then(function (built) {
+        worker = built.worker;
+        attachHandlers(worker);
+        worker.postMessage(built.init, [built.init.modelBuffer]);
+        starting = false;
+      }).catch(function (error) {
+        starting = false;
+        publish({ state: 'error', error: 'Could not start the detector worker: ' + (error.message || error) });
       });
-      return worker;
+      return true;
     }
 
     var INFLIGHT_TIMEOUT_MS = 5000; // first inference can be slow while shaders compile

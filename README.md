@@ -53,6 +53,13 @@ meeting.
 To add another site, add its URL pattern to `host_permissions`, both
 `content_scripts` entries and `web_accessible_resources` in `manifest.json`.
 
+## Troubleshooting
+
+| Symptom | Cause |
+| --- | --- |
+| The meeting shows my real face, but the preview page is fine | The tab was open before the extension loaded, or before you reloaded it — the camera is hooked as the page loads. Reload the meeting tab. If it persists, open the popup on that tab: it reports whether the content script is present, whether the camera was intercepted, and what the face tracker is doing. |
+| The head appears, then fades away | Face tracking stopped or never found a face. The popup shows the tracker's state and its cost per frame; *Advanced → When the face is lost* controls what happens next. |
+
 ## Settings
 
 | Setting | What it does |

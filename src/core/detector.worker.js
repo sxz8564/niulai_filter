@@ -12,9 +12,17 @@
  *
  * This is a classic worker on purpose: MediaPipe pulls in its wasm loader with
  * importScripts(), which does not exist in module workers.
+ *
+ * On a host page the worker is built from a blob and this file arrives with
+ * the vision bundle already concatenated ahead of it — a page-origin worker
+ * cannot reach across to chrome-extension:// for anything. So import only when
+ * the bundle is not already here, and take the wasm and the model from
+ * whatever the client hands over.
  */
 
-importScripts(new URL('../../vendor/tasks-vision/vision_bundle.js', self.location.href).href);
+if (!self.Vision) {
+  importScripts(new URL('../../vendor/tasks-vision/vision_bundle.js', self.location.href).href);
+}
 
 const { FilesetResolver, FaceLandmarker } = self.Vision;
 
@@ -118,9 +126,16 @@ function poseFromLandmarks(marks, width, height) {
 }
 
 async function init(config) {
-  const fileset = await FilesetResolver.forVisionTasks(config.wasmDir);
+  // Either a directory to resolve against, or the two files themselves as
+  // blob URLs, which is what a page-origin worker can actually load.
+  const fileset = config.wasmLoaderPath
+    ? { wasmLoaderPath: config.wasmLoaderPath, wasmBinaryPath: config.wasmBinaryPath }
+    : await FilesetResolver.forVisionTasks(config.wasmDir);
+  const model = config.modelBuffer
+    ? { modelAssetBuffer: new Uint8Array(config.modelBuffer) }
+    : { modelAssetPath: config.modelUrl };
   const options = {
-    baseOptions: { modelAssetPath: config.modelUrl, delegate: 'GPU' },
+    baseOptions: Object.assign({ delegate: 'GPU' }, model),
     runningMode: 'VIDEO',
     numFaces: 1,
     outputFaceBlendshapes: true,

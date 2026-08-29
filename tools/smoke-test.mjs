@@ -209,6 +209,55 @@ for (let i = 0; i < 30; i++) {
 }
 check('imported model reaches the outgoing stream', outgoing.avatar > 300,
   `${outgoing.avatar} avatar pixels of ${outgoing.total}`);
+
+/*
+ * Face tracking on a *host* page, which is a different problem from tracking
+ * on the preview page and was broken for far longer: an isolated world builds
+ * workers against the page's origin, so a chrome-extension:// worker script is
+ * refused outright on every real site. The preview page proves nothing here.
+ * The stand-in carries a strict policy for the same reason.
+ */
+// The head was pinned for the check above; tracking has to be back on.
+await preview.evaluate(() => chrome.storage.sync.set({
+  settings: { enabled: true, manual: false, animal: 'niulai' }
+}));
+
+const guarded = await context.newPage();
+await guarded.route('https://meet.google.com/**', (route) => route.fulfill({
+  status: 200,
+  contentType: 'text/html',
+  headers: {
+    'content-security-policy': "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; " +
+      "worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'"
+  },
+  body: '<!doctype html><meta charset="utf-8"><title>meet stand-in</title>' +
+        '<body style="margin:0"><video id="v" autoplay playsinline muted></video>'
+}));
+await guarded.goto('https://meet.google.com/csp-check');
+await guarded.evaluate(async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+  const video = document.getElementById('v');
+  video.srcObject = stream;
+  await video.play();
+});
+
+let hostDetector = { state: 'unknown', processed: 0 };
+for (let i = 0; i < 40; i++) {
+  await preview.waitForTimeout(500);
+  const reply = await preview.evaluate(async () => {
+    const tabs = await chrome.tabs.query({ url: 'https://meet.google.com/csp-check' });
+    if (!tabs.length) return null;
+    return await new Promise((resolve) => {
+      chrome.tabs.sendMessage(tabs[0].id, { type: 'crittercam:getStatus' }, (r) => {
+        resolve(chrome.runtime.lastError ? null : r);
+      });
+    });
+  });
+  if (reply && reply.detector) hostDetector = reply.detector;
+  if (hostDetector.state === 'error' || hostDetector.processed > 0) break;
+}
+check('face detector runs on a host page', hostDetector.state === 'ready' && hostDetector.processed > 0,
+  hostDetector.error || `${hostDetector.state}, ${hostDetector.processed} frames on ${hostDetector.delegate}`);
 await meet.locator('#v').screenshot({ path: join(outDir, 'meet-output.png') });
 
 console.log(`\nscreenshots in ${outDir}`);
