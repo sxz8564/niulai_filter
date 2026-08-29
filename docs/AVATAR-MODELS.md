@@ -106,13 +106,13 @@ Put the file in `models/avatars/` and add an entry to
 
 | Field | Required | Meaning |
 | --- | --- | --- |
-| `id` | yes | Unique key, stored in settings. Changing it resets anyone using that avatar |
+| `id` | yes | Unique key, stored in settings. Must not collide with a built-in animal (`monkey`, `cat`, `fox`, …) — a clash is refused with a console warning. Changing it resets anyone using that avatar |
 | `name` | yes | Label in the picker |
 | `file` | yes | Filename inside `models/avatars/` |
 | `scale` | no | Multiplier on the automatic fit. `1.2` makes the head 20% bigger |
 | `offset` | no | `[x, y, z]` shift after fitting, in head widths. Negative `y` moves it down |
 | `rotation` | no | `[x, y, z]` degrees, applied before measuring. Use when the export faces the wrong way |
-| `tint` | no | Swatch colour in the picker, and the flat-art fallback colour |
+| `tint` | no | Swatch colour in the picker, the flat-art fallback colour, and the colour applied to any untextured material in the model |
 | `jawDegrees` | no | Rotation applied to a jaw *bone* at full open. Default 16 |
 | `morphs` | no | Explicit morph names, when auto-matching picks the wrong target |
 | `nodes` | no | Explicit node names for `jaw`, `earLeft`, `earRight` |
@@ -133,6 +133,29 @@ node tools/validate-avatar.mjs path/to/head.glb
 It reports bounds, triangle count, materials and which expression channels it
 found, and exits non-zero for anything that would stop the model loading —
 compression, external textures, an oversized file.
+
+To see what the file actually contains, render it from four sides:
+
+```bash
+node tools/render-avatar.mjs path/to/head.glb sheet.png
+```
+
+Generators often return something other than a head: a full body, or a
+turnaround with three figures standing side by side (the validator flags this
+as *much wider than tall*). Cut the head out rather than re-prompting:
+
+```bash
+node tools/crop-avatar.mjs incoming.glb --list          # what is in there
+node tools/crop-avatar.mjs incoming.glb head.glb --figure 0 --top 0.30
+```
+
+`--figure` picks a figure left to right, `--top` the fraction of its height to
+keep, and `--box x0,y0,z0,x1,y1,z1` overrides both. Triangles are kept whole by
+their centroid, node transforms are baked, the result is recentred, and smooth
+normals are written even when the source had none.
+
+Only `render-avatar.mjs` needs a browser; if Playwright cannot download its
+own Chromium, point `PLAYWRIGHT_CHROMIUM` at one already on disk.
 
 ## 7. Testing a model
 
@@ -169,7 +192,9 @@ and reload the extension at `chrome://extensions`.
 | Far too small | A full body was exported; the fit scales by total width. Export the head alone |
 | Sits too high or low | Adjust `offset[1]`, or use the popup's **Up / down** slider |
 | Mouth never opens | No matching morph target — check the preview report, then rename or set `morphs` |
-| Black or untextured | Textures referenced externally. Re-export with images embedded |
+| Black or untextured | Textures referenced externally. Re-export with images embedded. A model with no materials at all is coloured by `tint` |
+| Faceted, like cut glass | The export had no normals. They are computed on load, but exporting them is better |
+| Does not appear in the picker | The `id` collides with a built-in animal — check the console and rename it |
 | Frame rate drops | Over budget (§3). Decimate the mesh and shrink textures |
 
 ## 9. Exporting from Blender

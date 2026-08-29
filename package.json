@@ -10,11 +10,13 @@
     "icons": "node tools/make-icons.mjs",
     "build:three": "esbuild tools/three-entry/entry.js --bundle --minify --format=iife --global-name=THREE --outfile=vendor/three/three.iife.js --legal-comments=none",
     "validate:avatar": "node tools/validate-avatar.mjs",
+    "render:avatar": "node tools/render-avatar.mjs",
+    "crop:avatar": "node tools/crop-avatar.mjs",
     "example:avatar": "node tools/make-example-avatar.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.0",
-    "playwright": "^1.56.0",
+    "playwright": "^1.62.1",
     "three": "^0.185.0"
   },
   "dependencies": {

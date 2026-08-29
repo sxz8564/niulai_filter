@@ -27,9 +27,13 @@ function check(name, ok, detail) {
   if (!ok) failures.push(name);
 }
 
+// PLAYWRIGHT_CHROMIUM points at a Chromium already on disk, for environments
+// where Playwright cannot download its own.
+const chromePath = process.env.PLAYWRIGHT_CHROMIUM;
+
 const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'critter-')), {
   headless: true,
-  channel: 'chromium',
+  ...(chromePath ? { executablePath: chromePath } : { channel: 'chromium' }),
   args: [
     `--disable-extensions-except=${root}`,
     `--load-extension=${root}`,

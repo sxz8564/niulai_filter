@@ -13,7 +13,10 @@ const { chromium } = require('playwright');
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // Software GL so the 3D heads render in headless.
-const browser = await chromium.launch({ args: ['--no-sandbox', '--enable-unsafe-swiftshader'] });
+const browser = await chromium.launch({
+  args: ['--no-sandbox', '--enable-unsafe-swiftshader'],
+  executablePath: process.env.PLAYWRIGHT_CHROMIUM || undefined
+});
 const page = await browser.newPage();
 await page.addScriptTag({ content: readFileSync(join(root, 'vendor/three/three.iife.js'), 'utf8') });
 await page.addScriptTag({ content: readFileSync(join(root, 'src/core/animals.js'), 'utf8') });

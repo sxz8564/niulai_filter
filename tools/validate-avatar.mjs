@@ -90,10 +90,18 @@ if (externalImages.length) {
 /* ------------------------------------------------------------- geometry */
 
 let triangles = 0;
+let hasNormals = false;
+let hasUVs = false;
+let primitiveCount = 0;
+let unmaterialised = 0;
 const accessors = json.accessors || [];
 for (const mesh of json.meshes || []) {
   for (const prim of mesh.primitives || []) {
     if (prim.mode !== undefined && prim.mode !== 4) continue;   // triangles only
+    primitiveCount++;
+    if (prim.attributes?.NORMAL !== undefined) hasNormals = true;
+    if (prim.attributes?.TEXCOORD_0 !== undefined) hasUVs = true;
+    if (prim.material === undefined) unmaterialised++;
     if (prim.indices !== undefined) triangles += (accessors[prim.indices]?.count || 0) / 3;
     else triangles += (accessors[prim.attributes?.POSITION]?.count || 0) / 3;
   }
@@ -151,9 +159,22 @@ if (!hasBounds) {
   const [w, h, d] = dims;
   if (d > w * 2) note('warn', 'much deeper than wide', 'the model may be exported Z-up — try "rotation": [-90, 0, 0]');
   if (h > w * 2.2) note('warn', 'much taller than wide', 'looks like a body rather than a head; the fit scales by width, so a body makes the head tiny');
+  if (w > h * 1.6) note('warn', 'much wider than tall', 'a head is roughly as wide as it is tall — this looks like several figures side by side, or a turnaround baked into geometry');
   const centre = [0, 1, 2].map((i) => (bounds.max[i] + bounds.min[i]) / 2);
   const offCentre = Math.max(...centre.map((c, i) => Math.abs(c) / (dims[i] || 1)));
   if (offCentre > 1.5) note('warn', 'origin far from the head', 'harmless — the loader re-centres — but check the export');
+}
+
+if (primitiveCount && !hasNormals) {
+  note('warn', 'no NORMAL attribute', 'normals are computed on load, but the export will look faceted — enable normals on export');
+}
+if ((json.materials || []).length === 0) {
+  note('warn', 'no materials', 'the model will render untextured white; this is usually an untextured draft from a generator');
+} else if (unmaterialised) {
+  note('warn', `${unmaterialised} primitive(s) with no material`);
+}
+if ((json.materials || []).length && !hasUVs && (json.textures || []).length) {
+  note('warn', 'textures present but no TEXCOORD_0', 'the textures cannot be applied without UVs');
 }
 
 if (matched.jawOpen.length === 0 && !jawNode) {

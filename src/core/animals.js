@@ -1033,7 +1033,16 @@
      * something when WebGL is unavailable.
      */
     registerModel: function (entry) {
-      if (!entry || !entry.id || BY_ID[entry.id]) return null;
+      if (!entry || !entry.id) return null;
+      if (BY_ID[entry.id]) {
+        // Ids are stored in settings, so a clash cannot be resolved by
+        // renaming here — say so instead of dropping the model in silence.
+        if (globalThis.console) {
+          console.warn('[Critter Cam] avatar id "' + entry.id +
+            '" is already taken by a built-in animal; give the model a different id.');
+        }
+        return null;
+      }
       var spec = base({
         id: entry.id,
         name: entry.name || entry.id,

@@ -147,6 +147,41 @@
     var scene = gltf.scene || (gltf.scenes && gltf.scenes[0]);
     if (!scene) throw new Error('model contains no scene');
 
+    // Generators often emit position-only meshes; without normals the surface
+    // has no shading at all, so derive them rather than rejecting the model.
+    var computedNormals = 0;
+    scene.traverse(function (node) {
+      if (!node.isMesh || !node.geometry || node.geometry.attributes.normal) return;
+      node.geometry.computeVertexNormals();
+      computedNormals++;
+      // GLTFLoader turns on flat shading for a primitive that arrived without
+      // normals; now that there are normals, let the surface shade smoothly.
+      var mats = Array.isArray(node.material) ? node.material : [node.material];
+      mats.forEach(function (material) {
+        if (material && material.flatShading) {
+          material.flatShading = false;
+          material.needsUpdate = true;
+        }
+      });
+    });
+
+    // Generators frequently export with no materials at all, which renders as
+    // flat white. `tint` colours those surfaces; textured materials are left
+    // alone so a properly painted model is never overwritten.
+    var tinted = 0;
+    if (config.tint) {
+      var colour = new three.Color(config.tint);
+      scene.traverse(function (node) {
+        if (!node.isMesh || !node.material) return;
+        var mats = Array.isArray(node.material) ? node.material : [node.material];
+        mats.forEach(function (material) {
+          if (material.map || !material.color) return;
+          material.color.copy(colour);
+          tinted++;
+        });
+      });
+    }
+
     var fitted = fit(three, scene, config);
     var morphs = findMorphs(scene, config.morphs);
     var nodes = findNodes(scene, config.nodes);
@@ -192,6 +227,8 @@
       parts: parts,
       report: {
         measured: fitted.measured,
+        computedNormals: computedNormals,
+        tintedMaterials: tinted,
         channels: Object.keys(morphs).reduce(function (acc, key) {
           acc[key] = morphs[key].length;
           return acc;
