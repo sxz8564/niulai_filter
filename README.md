@@ -12,9 +12,14 @@ frames on a canvas, and hands the meeting the filtered stream instead.
 
 ## What it does
 
-- **13 animals** — Niulai the orange calf, plus shiba, cat, fox, wolf, panda,
-  bear, koala, tiger, bunny, pig, frog and monkey — rendered as lit 3D models,
-  so the head has real volume and turns with you in three dimensions.
+- **15 heads** — 13 built in (Niulai the orange calf, plus shiba, cat, fox,
+  wolf, panda, bear, koala, tiger, bunny, pig, frog and monkey) and two
+  imported, textured models: Monkey Mascot and Joy Goblin. All are lit 3D, so
+  the head has real volume and turns with you in three dimensions.
+- **Bring your own model.** Drop a `.glb` in `models/avatars/` and it appears in
+  the picker; `tools/` will crop a head out of a full body, shrink its textures
+  and build the expression shapes if it arrived without a rig. See
+  [docs/AVATAR-MODELS.md](docs/AVATAR-MODELS.md).
 - **Real face tracking** with MediaPipe Face Landmarker: the head follows your
   position, size and tilt, turns with you, and its mouth, eyes and brows follow
   your own.
