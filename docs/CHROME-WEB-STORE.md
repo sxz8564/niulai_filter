@@ -45,31 +45,47 @@ against it. A file left out of the package fails here rather than in review.
 
 **Summary** (132 characters, already in the manifest):
 
-> Replaces your head with an animated animal, live in your webcam feed, so it
-> works in Google Meet and other video calls.
+> Replaces your head with an animated animal, live in your webcam feed, so
+> everyone on your video call sees the animal, not you.
+
+A single brand name used in a sentence is ordinary and not what the spam policy
+targets — but after a keyword-spam rejection there is no reason to keep one in
+the one field that appears under the title. Changing it means editing
+`manifest.json`, bumping the version and re-uploading, so do it in the same
+round as any other package change rather than on its own.
 
 **Description:**
 
-> Critter Cam puts an animated animal head over yours in your webcam feed —
-> and because it works on the camera itself, everyone on the call sees it, not
+> Critter Cam puts an animated animal head over yours in your webcam feed.
+> Because it works on the camera itself, everyone on the call sees it — not
 > just you.
 >
 > No virtual camera driver, no separate app, nothing to install outside Chrome.
 >
+> What it does
+>
 > • Real face tracking. The head follows your position, turns and tilts with
 >   you, and its mouth, eyes and brows follow your own.
-> • Thirteen heads: Niulai, a textured 3D character whose mouth opens onto a
->   modelled interior, plus shiba, cat, fox, wolf, panda, bear, koala, tiger,
->   bunny, pig, frog and monkey.
+> • Thirteen heads to choose from, including a textured 3D character whose
+>   mouth opens onto a modelled interior when you speak.
 > • Bring your own. Drop a .glb model in and it appears in the picker.
-> • Works in Google Meet, Zoom on the web, Microsoft Teams, Webex, Whereby,
->   Discord and Gather.
-> • Entirely offline. Face tracking runs on your machine; no frame ever leaves
+> • Entirely offline. Face tracking runs on your machine, no frame ever leaves
 >   your computer, and the extension makes no network requests at all.
 >
-> Tune the fit in the live preview — size, position, depth, smoothing — then
-> join a meeting. Reload a meeting tab you already had open, because the camera
-> is hooked as the page loads.
+> How to use it
+>
+> Open the preview from the toolbar, start your camera and pick a head. Adjust
+> the size and position until you are covered, then join your meeting — reload
+> the tab if it was already open, because the camera is hooked as a page loads.
+>
+> Critter Cam runs only on the video-calling sites it declares, which Chrome
+> lists for you when you install it. It cannot see or act on any other site.
+
+Do not list the supported sites by name here. A run of brand names reads as
+keyword stuffing to the store's spam review, whatever the intent behind it —
+that exact line got the first submission rejected. Chrome already shows the
+site list at install, and the permission justification below is the right place
+to enumerate them, because that field is asking which sites and why.
 
 ## Graphics
 
