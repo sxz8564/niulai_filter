@@ -20,12 +20,27 @@ const browser = await chromium.launch({
 const page = await browser.newPage();
 await page.addScriptTag({ content: readFileSync(join(root, 'vendor/three/three.iife.js'), 'utf8') });
 await page.addScriptTag({ content: readFileSync(join(root, 'src/core/animals.js'), 'utf8') });
+await page.addScriptTag({ content: readFileSync(join(root, 'src/core/model-loader.js'), 'utf8') });
 await page.addScriptTag({ content: readFileSync(join(root, 'src/core/animals3d.js'), 'utf8') });
 
-const dataUrl = await page.evaluate(() => {
+// The avatars are imported models, so they have to be handed over before
+// anything can be drawn.
+const registry = JSON.parse(readFileSync(join(root, 'models/avatars/index.json'), 'utf8'));
+const models = registry.map((e) => ({
+  entry: e,
+  base64: readFileSync(join(root, 'models/avatars', e.file)).toString('base64')
+}));
+
+const dataUrl = await page.evaluate(async (models) => {
   const NS = globalThis.__CritterCam;
+  NS.avatarModels.registerAll(models.map((m) => m.entry));
+  for (const model of models) {
+    const bytes = Uint8Array.from(atob(model.base64), (c) => c.charCodeAt(0)).buffer;
+    NS.avatarModels.provide(model.entry.id, bytes);
+    await NS.avatarModels.parse(bytes, model.entry);
+  }
   const list = NS.animals.list();
-  const cols = 7;
+  const cols = 3;
   const rows = Math.ceil(list.length / cols);
   const cell = 150;
   const label = 24;
@@ -63,7 +78,7 @@ const dataUrl = await page.evaluate(() => {
     ctx.restore();
   });
   return canvas.toDataURL('image/png');
-});
+}, models);
 
 mkdirSync(join(root, 'docs'), { recursive: true });
 writeFileSync(join(root, 'docs/animals.png'), Buffer.from(dataUrl.split(',')[1], 'base64'));

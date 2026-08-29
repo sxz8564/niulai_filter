@@ -74,8 +74,17 @@ const SAMPLE_MODEL = `async function loadSampleModel() {
 
 const preview = await context.newPage();
 const previewErrors = [];
+/*
+ * MediaPipe's wasm runtime announces its delegate through console.error —
+ * "INFO: Created TensorFlow Lite XNNPACK delegate for CPU." is a startup note,
+ * not a failure, and counting it as one makes this check depend on whether the
+ * detector happens to start before the page settles.
+ */
+const isNoise = (text) => /^INFO:/.test(text);
 preview.on('pageerror', (e) => previewErrors.push(e.message));
-preview.on('console', (m) => { if (m.type() === 'error') previewErrors.push(m.text()); });
+preview.on('console', (m) => {
+  if (m.type() === 'error' && !isNoise(m.text())) previewErrors.push(m.text());
+});
 
 await preview.goto(`chrome-extension://${extensionId}/src/preview/preview.html`);
 await preview.getByRole('button', { name: 'Start camera' }).click();

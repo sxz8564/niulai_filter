@@ -8,17 +8,13 @@ There is no virtual camera driver and nothing to install outside Chrome. The
 extension intercepts `getUserMedia`, draws the animal head onto the camera
 frames on a canvas, and hands the meeting the filtered stream instead.
 
-![The twelve built-in animal heads](docs/animals.png)
+![The six characters](docs/animals.png)
 
 ## What it does
 
 - **Six rigged 3D characters** — Niulai, Baola, Wolfwolf, NiuMama, NiuBaba and
-  XiaoNiao —
-  textured, with mouths that open onto a modelled interior, eyes that blink one
-  at a time, and brows that lift.
-- **Twelve more animals** built in — shiba, cat, fox, wolf, panda, bear, koala,
-  tiger, bunny, pig, frog and monkey — all lit 3D, so the head has real volume
-  and turns with you in three dimensions.
+  XiaoNiao — textured, with mouths that open onto a modelled interior, eyes
+  that blink one at a time, and brows that lift.
 - **Bring your own model.** Drop a `.glb` in `models/avatars/` and it appears in
   the picker; `tools/` will crop a head out of a full body, shrink its textures
   and build the expression shapes if it arrived without a rig. See

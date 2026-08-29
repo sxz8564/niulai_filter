@@ -66,8 +66,8 @@ round as any other package change rather than on its own.
 >
 > • Real face tracking. The head follows your position, turns and tilts with
 >   you, and its mouth, eyes and brows follow your own.
-> • Thirteen heads to choose from, including a textured 3D character whose
->   mouth opens onto a modelled interior when you speak.
+> • Six characters to choose from, each textured and rigged, with a mouth that
+>   opens onto a modelled interior when you speak.
 > • Bring your own. Drop a .glb model in and it appears in the picker.
 > • Entirely offline. Face tracking runs on your machine, no frame ever leaves
 >   your computer, and the extension makes no network requests at all.

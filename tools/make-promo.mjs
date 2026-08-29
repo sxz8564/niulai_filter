@@ -23,7 +23,12 @@ mkdirSync(out, { recursive: true });
 
 const registry = JSON.parse(readFileSync(join(root, 'models/avatars/index.json'), 'utf8'));
 const entry = registry.find((e) => e.id === 'niulai') || registry[0];
-const modelBase64 = readFileSync(join(root, 'models/avatars', entry.file)).toString('base64');
+// Every avatar is an imported model, so the tile art needs all of them: the
+// hero, and the rest as the row that shows this is a set.
+const models = registry.map((e) => ({
+  entry: e,
+  base64: readFileSync(join(root, 'models/avatars', e.file)).toString('base64')
+}));
 
 const browser = await chromium.launch({
   args: ['--no-sandbox', '--enable-unsafe-swiftshader'],
@@ -34,15 +39,17 @@ for (const file of ['vendor/three/three.iife.js', 'src/core/animals.js', 'src/co
   await page.addScriptTag({ content: readFileSync(join(root, file), 'utf8') });
 }
 
-const images = await page.evaluate(async ({ entry, modelBase64 }) => {
+const images = await page.evaluate(async ({ entry, models }) => {
   const NS = globalThis.__CritterCam;
-  NS.avatarModels.registerAll([entry]);
-  const bytes = Uint8Array.from(atob(modelBase64), (c) => c.charCodeAt(0)).buffer;
-  NS.avatarModels.provide(entry.id, bytes);
-  // Parse it here rather than waiting on `ready`: nothing else has asked for
-  // the model yet, so nothing would ever resolve. The result is cached, so the
-  // renders below get the built head straight away.
-  await NS.avatarModels.parse(bytes, entry);
+  NS.avatarModels.registerAll(models.map((m) => m.entry));
+  for (const model of models) {
+    const bytes = Uint8Array.from(atob(model.base64), (c) => c.charCodeAt(0)).buffer;
+    NS.avatarModels.provide(model.entry.id, bytes);
+    // Parse here rather than waiting on `ready`: nothing else has asked for
+    // these yet, so nothing would ever resolve. Results are cached, so the
+    // renders below get built heads straight away.
+    await NS.avatarModels.parse(bytes, model.entry);
+  }
 
   const renderer = NS.avatar3d.sharedRenderer();
   const FONT = '"Liberation Sans", "DejaVu Sans", system-ui, sans-serif';
@@ -127,7 +134,7 @@ const images = await page.evaluate(async ({ entry, modelBase64 }) => {
     ctx.fillText('and everyone on the call sees it, not just you.', 86, 332);
 
     // A few of the other heads, to show this is a set rather than one avatar.
-    const others = ['shiba', 'fox', 'panda', 'tiger', 'frog'];
+    const others = models.map((m) => m.entry.id).filter((id) => id !== entry.id).slice(0, 5);
     others.forEach((id, i) => {
       const size = 74;
       const x = 100 + i * 92;
@@ -144,7 +151,7 @@ const images = await page.evaluate(async ({ entry, modelBase64 }) => {
   }
 
   return result;
-}, { entry, modelBase64 });
+}, { entry, models });
 
 await browser.close();
 

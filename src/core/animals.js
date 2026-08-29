@@ -573,22 +573,6 @@
     ctx.restore();
   }
 
-  /* ------------------------------------------------------- marking helpers */
-
-  function stripe(ctx, x, y, len, angle, weight, color) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    ctx.beginPath();
-    ctx.moveTo(-len / 2, 0);
-    ctx.quadraticCurveTo(0, -weight * 0.6, len / 2, 0);
-    ctx.quadraticCurveTo(0, weight * 0.6, -len / 2, 0);
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.restore();
-  }
-
   function base(overrides) {
     var spec = {
       fur: '#c9a06a',
@@ -619,228 +603,16 @@
 
   /* --------------------------------------------------------------- animals */
 
-  var SPECS = [
-    base({
-      id: 'shiba', name: 'Shiba', emoji: '🐕',
-      fur: '#e0a45c', furLight: '#f0c087', furShade: '#b97f39',
-      inner: '#f0b7a8', muzzleColor: '#fffaf2',
-      ear: { type: 'triangle', w: 0.29, h: 0.33, x: 0.345, y: -0.40, tilt: -0.26, inner: 0.54 },
-      muzzle: { w: 0.50, h: 0.32, y: 0.215 },
-      eyes: { x: 0.205, y: -0.025, r: 0.077, aspect: 0.94, pupil: 'round' },
-      markings: function (ctx, s) {
-        // Cream brows and cheeks — the shiba's signature markings.
-        fillEllipse(ctx, -0.20, -0.155, 0.075, 0.045, -0.25, '#fff6e6');
-        fillEllipse(ctx, 0.20, -0.155, 0.075, 0.045, 0.25, '#fff6e6');
-        fillEllipse(ctx, -0.345, 0.16, 0.095, 0.095, 0, 'rgba(255,250,240,0.95)');
-        fillEllipse(ctx, 0.345, 0.16, 0.095, 0.095, 0, 'rgba(255,250,240,0.95)');
-        fillEllipse(ctx, 0, 0.29, 0.185, 0.15, 0, 'rgba(255,250,240,0.95)');
-      }
-    }),
+  /*
+   * Every avatar is an imported model now, registered from
+   * models/avatars/index.json at startup. The drawing code below still
+   * matters: it is what renders when WebGL is unavailable, or before a
+   * model's bytes have arrived.
+   */
+  var SPECS = [];
 
-    base({
-      id: 'cat', name: 'Cat', emoji: '🐱',
-      fur: '#9aa3ae', furLight: '#b9c1c9', furShade: '#767f8b',
-      inner: '#f2b1b6', muzzleColor: '#f4f6f8', noseColor: '#e58b9b',
-      head: { w: 1, h: 1.0, jaw: 0.78, chin: 0.44 },
-      ear: { type: 'triangle', w: 0.30, h: 0.36, x: 0.315, y: -0.40, tilt: -0.20, inner: 0.55 },
-      eyes: { x: 0.205, y: -0.03, r: 0.085, aspect: 1.05, pupil: 'slit' },
-      eyeWhite: '#8fd66b',
-      muzzle: { w: 0.42, h: 0.26, y: 0.20 },
-      nose: { w: 0.062, h: 0.048, y: 0.125, type: 'triangle' },
-      whiskers: { x: 0.18, len: 0.34, weight: 0.010, color: 'rgba(255,255,255,0.8)' },
-      markings: function (ctx) {
-        stripe(ctx, 0, -0.40, 0.10, 0, 0.052, 'rgba(60,66,74,0.55)');
-        stripe(ctx, -0.13, -0.37, 0.09, 0.25, 0.045, 'rgba(60,66,74,0.5)');
-        stripe(ctx, 0.13, -0.37, 0.09, -0.25, 0.045, 'rgba(60,66,74,0.5)');
-        stripe(ctx, -0.40, -0.02, 0.16, 1.35, 0.05, 'rgba(60,66,74,0.4)');
-        stripe(ctx, 0.40, -0.02, 0.16, -1.35, 0.05, 'rgba(60,66,74,0.4)');
-      }
-    }),
-
-    base({
-      id: 'fox', name: 'Fox', emoji: '🦊',
-      fur: '#e8763a', furLight: '#f5a163', furShade: '#c0551f',
-      inner: '#2f2622', muzzleColor: '#fff8f0',
-      head: { w: 1, h: 1.02, jaw: 0.66, chin: 0.30 },
-      ear: { type: 'triangle', w: 0.28, h: 0.42, x: 0.335, y: -0.36, tilt: -0.24, inner: 0.5, innerColor: '#3a2a24' },
-      eyes: { x: 0.215, y: -0.055, r: 0.079, aspect: 0.96, pupil: 'round' },
-      muzzle: { w: 0.40, h: 0.34, y: 0.27 },
-      nose: { w: 0.065, h: 0.052, y: 0.185, type: 'triangle' },
-      mouth: { y: 0.29, w: 0.10, depth: 0.05, maxOpen: 0.2 },
-      whiskers: { x: 0.16, len: 0.30, weight: 0.009, color: 'rgba(255,255,255,0.6)' },
-      markings: function (ctx) {
-        // White cheek ruff + snout blaze.
-        ctx.beginPath();
-        ctx.moveTo(-0.30, 0.06);
-        ctx.quadraticCurveTo(-0.52, 0.30, -0.24, 0.52);
-        ctx.quadraticCurveTo(0, 0.62, 0.24, 0.52);
-        ctx.quadraticCurveTo(0.52, 0.30, 0.30, 0.06);
-        ctx.quadraticCurveTo(0, 0.20, -0.30, 0.06);
-        ctx.closePath();
-        ctx.fillStyle = '#fff8f0';
-        ctx.fill();
-      }
-    }),
-
-    base({
-      id: 'wolf', name: 'Wolf', emoji: '🐺',
-      fur: '#7d848f', furLight: '#9ba2ad', furShade: '#5c636e',
-      inner: '#3a3f47', muzzleColor: '#e6eaef',
-      head: { w: 1, h: 1.04, jaw: 0.68, chin: 0.32 },
-      ear: { type: 'triangle', w: 0.26, h: 0.38, x: 0.34, y: -0.38, tilt: -0.22, inner: 0.5, innerColor: '#4a505a' },
-      eyes: { x: 0.215, y: -0.05, r: 0.076, aspect: 0.9, pupil: 'slit' },
-      eyeWhite: '#f2c94c',
-      muzzle: { w: 0.42, h: 0.34, y: 0.26 },
-      nose: { w: 0.07, h: 0.055, y: 0.175, type: 'triangle' },
-      mouth: { y: 0.285, w: 0.11, depth: 0.05, maxOpen: 0.22 },
-      teeth: true,
-      markings: function (ctx) {
-        ctx.beginPath();
-        ctx.moveTo(-0.26, -0.05);
-        ctx.quadraticCurveTo(-0.34, 0.30, -0.20, 0.50);
-        ctx.quadraticCurveTo(0, 0.60, 0.20, 0.50);
-        ctx.quadraticCurveTo(0.34, 0.30, 0.26, -0.05);
-        ctx.quadraticCurveTo(0, 0.10, -0.26, -0.05);
-        ctx.closePath();
-        ctx.fillStyle = '#dfe4ea';
-        ctx.fill();
-      }
-    }),
-
-    base({
-      id: 'panda', name: 'Panda', emoji: '🐼',
-      fur: '#fbfbfb', furLight: '#ffffff', furShade: '#d8dade',
-      muzzleColor: '#ffffff', noseColor: '#22201f', outline: '#c9ccd1',
-      head: { w: 1.04, h: 0.98, jaw: 0.84, chin: 0.52 },
-      ear: { type: 'round', w: 0.30, h: 0.30, x: 0.40, y: -0.34, tilt: -0.1, color: '#23211f', edge: '#23211f', inner: 0 },
-      eyes: { x: 0.225, y: -0.005, r: 0.062, aspect: 1, pupil: 'round' },
-      muzzle: { w: 0.36, h: 0.24, y: 0.22 },
-      nose: { w: 0.075, h: 0.06, y: 0.145, type: 'round' },
-      mouth: { y: 0.245, w: 0.115, depth: 0.055, maxOpen: 0.22 },
-      markings: function (ctx) {
-        // The eye patches, tilted inward like the real thing.
-        fillEllipse(ctx, -0.225, 0.005, 0.135, 0.16, 0.38, '#23211f');
-        fillEllipse(ctx, 0.225, 0.005, 0.135, 0.16, -0.38, '#23211f');
-      }
-    }),
-
-    base({
-      id: 'bear', name: 'Bear', emoji: '🐻',
-      fur: '#a9764a', furLight: '#c08f60', furShade: '#855630',
-      inner: '#c99b78', muzzleColor: '#e5c49b', noseColor: '#3a2a22',
-      head: { w: 1.02, h: 1.0, jaw: 0.86, chin: 0.52 },
-      ear: { type: 'round', w: 0.28, h: 0.28, x: 0.38, y: -0.34, tilt: -0.08, inner: 0.5 },
-      eyes: { x: 0.195, y: -0.045, r: 0.062, aspect: 1, pupil: 'round' },
-      muzzle: { w: 0.48, h: 0.34, y: 0.24 },
-      nose: { w: 0.085, h: 0.062, y: 0.155, type: 'round' },
-      mouth: { y: 0.27, w: 0.115, depth: 0.06, maxOpen: 0.24 }
-    }),
-
-    base({
-      id: 'koala', name: 'Koala', emoji: '🐨',
-      fur: '#9fa8b2', furLight: '#bcc4cc', furShade: '#7c858f',
-      inner: '#d6b5bb', muzzleColor: '#b6bec6', noseColor: '#3b3436',
-      head: { w: 1, h: 0.96, jaw: 0.84, chin: 0.5 },
-      ear: { type: 'round', w: 0.42, h: 0.40, x: 0.50, y: -0.16, tilt: -0.05, inner: 0.62, innerColor: '#d9b9be' },
-      eyes: { x: 0.215, y: -0.04, r: 0.062, aspect: 1, pupil: 'round' },
-      muzzle: null,
-      nose: { w: 0.115, h: 0.135, y: 0.14, type: 'round' },
-      mouth: { y: 0.30, w: 0.09, depth: 0.045, maxOpen: 0.12 },
-      faceExtras: function (ctx) {
-        // Fluffy ear tufts poking past the round ears.
-        ctx.fillStyle = 'rgba(255,255,255,0.22)';
-        fillEllipse(ctx, -0.5, -0.20, 0.16, 0.1, -0.5, 'rgba(255,255,255,0.22)');
-        fillEllipse(ctx, 0.5, -0.20, 0.16, 0.1, 0.5, 'rgba(255,255,255,0.22)');
-      }
-    }),
-
-    base({
-      id: 'tiger', name: 'Tiger', emoji: '🐯',
-      fur: '#f0a13a', furLight: '#f9bd63', furShade: '#c9761c',
-      inner: '#f6d3c0', muzzleColor: '#fff6ea', noseColor: '#c96a72',
-      head: { w: 1.02, h: 1.0, jaw: 0.82, chin: 0.48 },
-      ear: { type: 'round', w: 0.26, h: 0.26, x: 0.38, y: -0.34, tilt: -0.12, inner: 0.5, innerColor: '#3a2c26' },
-      eyes: { x: 0.215, y: -0.035, r: 0.08, aspect: 0.95, pupil: 'round' },
-      muzzle: { w: 0.46, h: 0.28, y: 0.215 },
-      nose: { w: 0.07, h: 0.055, y: 0.13, type: 'triangle' },
-      whiskers: { x: 0.19, len: 0.32, weight: 0.010, color: 'rgba(255,255,255,0.85)' },
-      markings: function (ctx) {
-        var dark = 'rgba(45,32,26,0.92)';
-        fillEllipse(ctx, 0, 0.06, 0.26, 0.20, 0, 'rgba(255,246,234,0.5)');
-        // Forehead crown.
-        stripe(ctx, 0, -0.40, 0.22, 0, 0.07, dark);
-        stripe(ctx, -0.155, -0.36, 0.20, 0.42, 0.065, dark);
-        stripe(ctx, 0.155, -0.36, 0.20, -0.42, 0.065, dark);
-        // Temple and cheek bars, angled to follow the head.
-        stripe(ctx, -0.375, -0.16, 0.26, 1.15, 0.07, dark);
-        stripe(ctx, 0.375, -0.16, 0.26, -1.15, 0.07, dark);
-        stripe(ctx, -0.425, 0.06, 0.24, 1.35, 0.065, dark);
-        stripe(ctx, 0.425, 0.06, 0.24, -1.35, 0.065, dark);
-        stripe(ctx, -0.40, 0.26, 0.20, 1.55, 0.06, dark);
-        stripe(ctx, 0.40, 0.26, 0.20, -1.55, 0.06, dark);
-      }
-    }),
-
-    base({
-      id: 'bunny', name: 'Bunny', emoji: '🐰',
-      fur: '#f6efe6', furLight: '#fffaf3', furShade: '#dccfbe',
-      inner: '#f7b8c4', muzzleColor: '#fffdfa', noseColor: '#ef92a6', outline: '#d6c8b6',
-      head: { w: 0.96, h: 1.0, jaw: 0.82, chin: 0.48 },
-      ear: { type: 'long', w: 0.19, h: 0.72, x: 0.20, y: -0.40, tilt: -0.16, inner: 0.52, swing: 1.8 },
-      eyes: { x: 0.20, y: -0.02, r: 0.075, aspect: 1.05, pupil: 'round' },
-      muzzle: { w: 0.40, h: 0.26, y: 0.20 },
-      nose: { w: 0.055, h: 0.042, y: 0.12, type: 'triangle' },
-      mouth: { y: 0.215, w: 0.10, depth: 0.05, maxOpen: 0.2 },
-      teeth: true,
-      teethClosed: true,
-      whiskers: { x: 0.15, len: 0.28, weight: 0.008, color: 'rgba(190,175,160,0.8)' }
-    }),
-
-    base({
-      id: 'pig', name: 'Pig', emoji: '🐷',
-      fur: '#f4a9bd', furLight: '#fbc4d3', furShade: '#dc8399',
-      inner: '#e58ba2', muzzleColor: '#f8bccb', noseColor: '#e08099',
-      head: { w: 1.04, h: 0.98, jaw: 0.86, chin: 0.54 },
-      ear: { type: 'tuft', w: 0.28, h: 0.30, x: 0.38, y: -0.36, tilt: -0.42, inner: 0.5 },
-      eyes: { x: 0.215, y: -0.06, r: 0.058, aspect: 1, pupil: 'round' },
-      muzzle: null,
-      nose: { w: 0.15, h: 0.105, y: 0.185, type: 'snout' },
-      mouth: { y: 0.34, w: 0.10, depth: 0.05, maxOpen: 0.18 }
-    }),
-
-    base({
-      id: 'frog', name: 'Frog', emoji: '🐸',
-      fur: '#7ec24d', furLight: '#9ed86b', furShade: '#5c9c34',
-      muzzleColor: '#cfeab0', noseColor: '#3f6b28', mouthColor: '#3f6b28',
-      head: { w: 1.06, h: 0.9, jaw: 0.92, chin: 0.62 },
-      ear: { type: 'none' },
-      eyes: { x: 0.30, y: -0.36, r: 0.14, style: 'bulge' },
-      eyeWhite: '#fdf6e3',
-      muzzle: null,
-      nose: { w: 0.03, h: 0.022, y: 0.02, type: 'round' },
-      mouth: { y: 0.17, w: 0.40, depth: 0.17 },
-      mouthStyle: 'wide',
-      markings: function (ctx) {
-        fillEllipse(ctx, 0, 0.30, 0.34, 0.16, 0, 'rgba(207,234,176,0.55)');
-      }
-    }),
-
-    base({
-      id: 'monkey', name: 'Monkey', emoji: '🐵',
-      fur: '#8a5f3c', furLight: '#a5764d', furShade: '#6b472a',
-      inner: '#d9a87e', muzzleColor: '#e2b68b', noseColor: '#6b472a',
-      head: { w: 1, h: 1.0, jaw: 0.84, chin: 0.5 },
-      ear: { type: 'round', w: 0.26, h: 0.26, x: 0.50, y: -0.02, tilt: 0, inner: 0.58 },
-      eyes: { x: 0.185, y: -0.055, r: 0.07, aspect: 1, white: true },
-      muzzle: { w: 0.56, h: 0.40, y: 0.24 },
-      nose: { w: 0.05, h: 0.038, y: 0.135, type: 'round' },
-      mouth: { y: 0.30, w: 0.14, depth: 0.06, maxOpen: 0.22 },
-      brows: { w: 0.15, h: 0.035, weight: 0.022, color: '#5d3e24' },
-      markings: function (ctx) {
-        fillEllipse(ctx, 0, -0.12, 0.34, 0.30, 0, 'rgba(226,182,139,0.55)');
-      }
-    })
-  ];
+  /** A neutral head, so a missing or failed registry never leaves nothing. */
+  var FALLBACK = base({ id: "fallback", name: "Head" });
 
   var BY_ID = {};
   for (var i = 0; i < SPECS.length; i++) BY_ID[SPECS[i].id] = SPECS[i];
@@ -876,7 +648,7 @@
       BY_ID[spec.id] = spec;
       return spec;
     },
-    get: function (id) { return BY_ID[id] || BY_ID.shiba; },
+    get: function (id) { return BY_ID[id] || SPECS[0] || FALLBACK; },
     has: function (id) { return !!BY_ID[id]; },
     draw: drawAnimal,
     /** Draws a head that fits a `size` x `size` box, for pickers and previews. */
