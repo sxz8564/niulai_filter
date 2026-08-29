@@ -7,5 +7,14 @@
     "offset": [0, -0.441, 0],
     "rotation": [0, 0, 0],
     "tint": "#e0762a"
+  },
+  {
+    "id": "baola",
+    "name": "Baola",
+    "file": "baola.glb",
+    "scale": 2.39,
+    "offset": [0.017, -0.486, 0],
+    "rotation": [0, 0, 0],
+    "tint": "#c2a23a"
   }
 ]

@@ -228,7 +228,9 @@ const frontOf = (list, depth) => list.filter((v) => v.p[2] > head.min[2] + size[
 // An open mouth is dark too, so eyes are looked for in the upper face only.
 const upper = head.min[1] + size[1] * 0.45;
 const darkFront = frontOf(all.filter((v) => v.tag === DARK && v.p[1] > upper), 0.55);
-const paleFront = frontOf(all.filter((v) => v.tag === PALE), 0.55);
+// Above the neck only: a pale chest or bib is as pale as a muzzle, and on a
+// bust it would drag the mouth line down into the chest.
+const paleFront = frontOf(all.filter((v) => v.tag === PALE && v.p[1] >= neckY), 0.55);
 
 /*
  * Eyes and brows are one dark band per side; the brow is its upper third.
