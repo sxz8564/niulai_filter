@@ -8,14 +8,15 @@ There is no virtual camera driver and nothing to install outside Chrome. The
 extension intercepts `getUserMedia`, draws the animal head onto the camera
 frames on a canvas, and hands the meeting the filtered stream instead.
 
-![Twelve animal heads](docs/animals.png)
+![The twelve built-in animal heads](docs/animals.png)
 
 ## What it does
 
-- **15 heads** — 13 built in (Niulai the orange calf, plus shiba, cat, fox,
-  wolf, panda, bear, koala, tiger, bunny, pig, frog and monkey) and two
-  imported, textured models: Monkey Mascot and Joy Goblin. All are lit 3D, so
-  the head has real volume and turns with you in three dimensions.
+- **Niulai**, a textured 3D model with a rig: the mouth opens onto a real
+  interior, each eye blinks, the brows lift.
+- **Twelve more animals** built in — shiba, cat, fox, wolf, panda, bear, koala,
+  tiger, bunny, pig, frog and monkey — all lit 3D, so the head has real volume
+  and turns with you in three dimensions.
 - **Bring your own model.** Drop a `.glb` in `models/avatars/` and it appears in
   the picker; `tools/` will crop a head out of a full body, shrink its textures
   and build the expression shapes if it arrived without a rig. See
@@ -107,7 +108,7 @@ Three details are load-bearing:
 npm install          # Playwright, for the dev tools only
 npm run test:pose    # head-pose geometry checks, no camera needed
 npm run test:smoke   # loads the extension in Chromium with a fake camera
-npm run icons        # regenerates icons/*.png from the Niulai renderer
+npm run icons        # regenerates icons/*.png from the default avatar
 ```
 
 `tools/smoke-test.mjs` is the useful one: it loads the unpacked extension,
