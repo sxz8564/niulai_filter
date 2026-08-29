@@ -29,13 +29,69 @@ frames on a canvas, and hands the meeting the filtered stream instead.
 - **Fully offline.** The model and runtime are bundled; nothing is uploaded and
   no frame ever leaves your machine.
 
-## Install
+## Install it (no coding needed)
 
-1. Clone this repository.
-2. Open `chrome://extensions` and turn on **Developer mode**.
-3. Choose **Load unpacked** and select the repository folder.
-4. The live preview page opens automatically. Click **Start camera**, pick an
-   animal, and adjust the size and position.
+Chrome can run an extension straight from a folder on your computer. Nothing
+here needs a terminal, an account, or any tool other than Chrome.
+
+**1. Download the code.**
+On this page, click the green **Code** button near the top, then
+**Download ZIP**. It saves a file called something like
+`niulai_filter-main.zip`.
+
+**2. Unzip it.**
+Double-click the file. On Windows, open it and choose **Extract all**; a folder
+appears next to the zip. On a Mac it unzips beside the file on its own.
+
+Put that folder somewhere you will not tidy away by accident — your Documents
+folder is fine, your Downloads folder is not. **Chrome loads the extension from
+this folder every time it starts, so moving or deleting it uninstalls the
+extension.**
+
+**3. Open Chrome's extensions page.**
+Type `chrome://extensions` in the address bar and press Enter. (The menu route
+is ⋮ → Extensions → Manage Extensions.)
+
+**4. Turn on Developer mode.**
+The switch is in the top-right corner of that page. Three buttons appear once
+it is on.
+
+**5. Click "Load unpacked", and choose the folder.**
+Pick the folder that has `manifest.json` directly inside it. If you opened the
+right one you will see folders named `src`, `icons` and `models` alongside that
+file. A common slip is selecting the outer folder that merely *contains* the
+real one — if Chrome complains that the manifest is missing, look one level
+deeper.
+
+**6. That is it.**
+The live preview page opens by itself. Click **Start camera**, allow the camera
+when Chrome asks, and pick an animal. Adjust **Head size** until your own head
+is covered.
+
+### Everyday use
+
+Open the extension from the toolbar to change animals or nudge the fit —
+changes apply live, mid-call. If you do not see its icon, click the puzzle-piece
+button in the toolbar and pin **Critter Cam**.
+
+### Things worth knowing
+
+- **Chrome shows a warning about developer-mode extensions** each time it
+  starts, and may ask you to confirm. That is Chrome's standard notice for any
+  extension not installed from the Web Store; clicking *Keep* is fine.
+- **Reload your meeting tab after installing.** The filter attaches to the
+  camera as a page loads, so a tab that was already open will not have it.
+- **To update**, download the ZIP again, replace the folder with the new one,
+  then press the ↻ **Reload** button on the extension's card at
+  `chrome://extensions`.
+- **To remove it**, click **Remove** on that card. Deleting the folder alone
+  leaves a broken entry behind.
+
+### Installing from a clone instead
+
+If you have git, `git clone` the repository and load that folder at step 5
+above. `npm install` is only needed to run the tests and the model tooling; the
+extension itself has no build step.
 
 ## Use it in Google Meet
 
@@ -59,7 +115,8 @@ To add another site, add its URL pattern to `host_permissions`, both
 
 ```bash
 npm run package      # dist/critter-cam-<version>.zip, validated before it builds
-npm run store:shots  # dist/store/*.png at 1280x800
+npm run store:shots  # screenshots at 1280x800
+npm run store:promo  # store icon and both promo tiles
 ```
 
 ## Troubleshooting
@@ -68,6 +125,11 @@ npm run store:shots  # dist/store/*.png at 1280x800
 | --- | --- |
 | The meeting shows my real face, but the preview page is fine | The tab was open before the extension loaded, or before you reloaded it — the camera is hooked as the page loads. Reload the meeting tab. If it persists, open the popup on that tab: it reports whether the content script is present, whether the camera was intercepted, and what the face tracker is doing. |
 | The head appears, then fades away | Face tracking stopped or never found a face. The popup shows the tracker's state and its cost per frame; *Advanced → When the face is lost* controls what happens next. |
+| Chrome says the manifest is missing, or the folder is invalid | You picked the wrong folder level. Choose the one with `manifest.json` sitting directly inside it, next to `src` and `icons` — often one level deeper than the folder the zip produced. |
+| The extension vanished, or its card shows an error, after a restart | Chrome loads it from wherever the folder is. Moving, renaming or deleting that folder breaks it. Put the folder back, or remove the card and load it again. |
+| I cannot find the toolbar button | Click the puzzle-piece icon in Chrome's toolbar, find **Critter Cam**, and click the pin beside it. |
+| Chrome keeps warning about developer-mode extensions | Expected for anything loaded from a folder rather than the Web Store. Choosing *Keep* leaves it running. |
+| The head covers only part of my face | Raise **Head size** in the popup until you are covered, then use *Up / down* and *Left / right* to centre it. |
 
 ## Settings
 
@@ -111,11 +173,16 @@ Three details are load-bearing:
   has to replace `getUserMedia` before the meeting app captures a reference to
   it. That world has no `chrome.*` APIs, so settings and face poses arrive by
   `postMessage` from the content-script bridge.
-- **The detector runs in a worker created from the extension's origin.** Google
-  Meet's content security policy governs anything the page loads, but not an
-  extension-origin worker, so the WebAssembly runtime loads reliably there. It
-  is a *classic* worker: MediaPipe loads its wasm with `importScripts()`, which
-  module workers do not have.
+- **The detector's worker is built from a blob, not from an extension URL.** An
+  isolated world creates workers against the *page's* origin, so
+  `new Worker('chrome-extension://…')` is refused outright on a real site — and
+  a page-origin worker then cannot reach back across to `chrome-extension://`
+  for anything either. The content script reads every piece it needs (the
+  vision bundle, the worker, the wasm glue and binary, the face model) and
+  hands them over, with the glue inlined so MediaPipe's `importScripts` is
+  answered from inside. Extension pages skip all of that and load the worker
+  from its URL. It is a *classic* worker either way: module workers have no
+  `importScripts`.
 - **The camera is never dropped on failure.** If the pipeline cannot start, the
   original camera stream is handed back untouched rather than a black frame.
 
@@ -191,7 +258,11 @@ The Three.js bundle in `vendor/three/` is built from `tools/three-entry/` with
 
 Everything runs locally. The camera frames go to a canvas in your own browser,
 the face model runs on your machine, and the extension makes no network
-requests. The only stored data is your settings, in `chrome.storage.sync`.
+requests at all — it works with the network disconnected. The only stored data
+is your settings, in `chrome.storage.sync`, which Chrome may copy between your
+own signed-in browsers.
+
+The full policy is in [PRIVACY.md](PRIVACY.md).
 
 ## Licence
 
