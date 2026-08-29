@@ -196,6 +196,13 @@ eye left     0.063, 0.021, 0.087  radius 0.036, 12 brow verts
 muzzle       0.001, -0.077, 0.125  y -0.155..0.032
 ```
 
+The jaw swings a region sized to the mouth, which the tool finds as the dense
+dark band on the muzzle — dense, because the nostrils are dark too and sit
+just above, and taking every dark vertex stretches the mouth up into the nose
+so the jaw swings the whole muzzle. A face with no such band falls back to an
+estimate from the muzzle's bounding box, which is coarse: expect to set
+`--hinge` and `--band` by hand there.
+
 `--rig` on the renderer draws each shape at rest, half and full, which is the
 only way to judge one. Tune with `--jaw`, `--blink`, `--brow`, `--smile`, and
 `--hinge` if the jaw swings the whole muzzle instead of dropping the chin.

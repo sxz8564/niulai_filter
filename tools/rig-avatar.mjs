@@ -181,7 +181,7 @@ for (const entry of primitives) {
       else if (lightness < 0.38) tag = DARK;
     }
     entry.tags[i] = tag;
-    all.push({ entry, index: i, p, tag });
+    all.push({ entry, index: i, p, tag, nz: entry.normal ? entry.normal[i * 3 + 2] : 0 });
   }
 }
 
@@ -281,14 +281,84 @@ const muzzle = paleFront.length > 20 ? {
 const eyeLevel = eyes.filter(Boolean).length
   ? eyes.filter(Boolean).reduce((s, e) => s + e.centre[1], 0) / eyes.filter(Boolean).length
   : head.min[1] + size[1] * 0.6;
-const mouthLine = muzzle
-  ? muzzle.bottom + (muzzle.top - muzzle.bottom) * 0.30
+/*
+ * A mouth sculpted open is a hole, and the inside of a hole faces away from
+ * the viewer. Take the front of the lower face and keep the surfaces pointing
+ * backwards: ear cups and eye sockets do that too, so they are excluded by
+ * height and by staying within the muzzle's own width. What is left is the
+ * opening, and its top and bottom edges are the two lips.
+ *
+ * This matters because guessing the mouth from the muzzle's bounding box
+ * over-estimates it badly on a small-mouthed face — the jaw then swings a
+ * region several times the size of the mouth.
+ */
+function findMouth() {
+  if (!muzzle) return null;
+  const below = eyeLevel - size[1] * 0.12;
+  const halfWidth = Math.max(muzzle.halfWidth, size[0] * 0.22) * 1.05;
+  const candidates = all.filter(function (v) {
+    return v.tag === DARK && v.p[1] >= neckY && v.p[1] < below &&
+      Math.abs(v.p[0]) <= halfWidth &&
+      v.p[2] > head.min[2] + size[2] * 0.55;
+  });
+  if (candidates.length < 8) return null;
+
+  /*
+   * The nostrils are dark too, and they sit right above the mouth, so taking
+   * the whole dark set stretches the mouth up into the nose and the jaw then
+   * swings the entire muzzle. The mouth is the *dense* band — a ring of
+   * vertices around an opening — while the nose is a handful of dots, so bin
+   * by height, start at the fullest bin and grow while the rows stay busy.
+   */
+  const BINS = 24;
+  const ys = candidates.map(function (v) { return v.p[1]; });
+  const lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
+  const span = (hi - lo) || 1e-6;
+  const counts = new Array(BINS).fill(0);
+  candidates.forEach(function (v) {
+    counts[Math.min(BINS - 1, Math.floor(((v.p[1] - lo) / span) * BINS))]++;
+  });
+  let peak = 0;
+  for (let i = 1; i < BINS; i++) if (counts[i] > counts[peak]) peak = i;
+  const floor = counts[peak] * 0.25;
+  let top = peak, bottom = peak;
+  while (top + 1 < BINS && counts[top + 1] >= floor) top++;
+  while (bottom - 1 >= 0 && counts[bottom - 1] >= floor) bottom--;
+  const yTop = lo + (span * (top + 1)) / BINS;
+  const yBottom = lo + (span * bottom) / BINS;
+
+  const inside = candidates.filter(function (v) { return v.p[1] >= yBottom && v.p[1] <= yTop; });
+  if (inside.length < 8) return null;
+  if (yTop - yBottom > size[1] * 0.45) return null;
+  const xs = inside.map(function (v) { return Math.abs(v.p[0]); });
+  return {
+    top: yTop, bottom: yBottom, centre: (yTop + yBottom) / 2, how: 'the dark band on the muzzle',
+    height: yTop - yBottom, halfWidth: Math.max.apply(null, xs), count: inside.length
+  };
+}
+const mouth = findMouth();
+
+/*
+ * The jaw hinges at the upper lip and reaches full swing at the lower one, so
+ * the moving region is the mouth rather than an arbitrary slice of the face.
+ * Without a modelled opening there is nothing to measure and the muzzle box is
+ * the best available guess.
+ */
+const mouthLine = mouth ? mouth.centre
+  : muzzle ? muzzle.bottom + (muzzle.top - muzzle.bottom) * 0.30
   : eyeLevel - size[1] * 0.35;
-const hinge = {
-  y: mouthLine + (eyeLevel - mouthLine) * hingeFraction,
-  z: head.min[2] + size[2] * 0.35,
-  band: size[1] * bandFraction
-};
+// The band is how far the swing takes to reach full. Sized to the mouth so a
+// small mouth moves a small region, with a floor: measured exactly, the ramp
+// is a knife edge and the surface creases where it lands.
+const hinge = mouth
+  ? { y: mouth.top, z: head.min[2] + size[2] * 0.35, band: Math.max(mouth.height * 1.6, size[1] * 0.06) }
+  : {
+      y: mouthLine + (eyeLevel - mouthLine) * hingeFraction,
+      z: head.min[2] + size[2] * 0.35,
+      band: size[1] * bandFraction
+    };
+if (opt('band', null) !== null) hinge.band = size[1] * bandFraction;
+if (opt('hinge', null) !== null) hinge.y = mouthLine + (eyeLevel - mouthLine) * hingeFraction;
 
 if (reportOnly || process.env.RIG_VERBOSE) {
   const f = (v) => (Array.isArray(v) ? v.map((n) => n.toFixed(3)).join(', ') : v.toFixed(3));
@@ -298,6 +368,7 @@ if (reportOnly || process.env.RIG_VERBOSE) {
   console.log(`dark / pale  ${all.filter((v) => v.tag === DARK).length} / ${all.filter((v) => v.tag === PALE).length}`);
   eyes.forEach((eye, i) => console.log(`eye ${i === 0 ? "left " : 'right'}    ${eye ? f(eye.centre) + `  radius ${f(eye.radius)}, ${eye.brows.length} brow verts` : 'not found'}`));
   console.log(`muzzle       ${muzzle ? f(muzzle.centre) + `  y ${f(muzzle.bottom)}..${f(muzzle.top)}` : 'not found'}`);
+  console.log(`mouth        ${mouth ? `${mouth.count} verts by ${mouth.how}, y ${f(mouth.bottom)}..${f(mouth.top)}, ${f(mouth.height)} tall, ${f(mouth.halfWidth * 2)} wide` : 'no opening found — falling back to the muzzle box'}`);
   console.log(`mouth line   y ${f(mouthLine)}`);
   console.log(`hinge        y ${f(hinge.y)}  z ${f(hinge.z)}  band ${f(hinge.band)}`);
   if (reportOnly) process.exit(0);
