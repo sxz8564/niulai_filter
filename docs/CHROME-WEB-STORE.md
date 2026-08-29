@@ -104,6 +104,65 @@ Google Search Console and you do not own github.com. If you hit that, publish
 the repository to GitHub Pages — `sxz8564.github.io` is a domain you can verify
 there — and point the field at that instead.
 
+## Filling the form
+
+The dashboard blocks publishing until every field below has an answer. Nothing
+here is about the package — it is all listing metadata. Do the email first,
+because verification is a round trip through your inbox.
+
+### Settings page
+
+- **Publisher contact email** — set it, then click through the verification
+  mail. Publishing is blocked until it is verified.
+
+### Store listing tab
+
+- **Language** — English (United States), unless you plan to localise.
+- **Category** — Communication. If the dropdown offers no such entry, use
+  Social & Communication, or Just for Fun; nothing in review turns on it.
+- **Icon** — upload `dist/store/icon-128.png`. This is separate from the icons
+  inside the package; the manifest ones do not fill it in.
+- **Screenshots** — upload `dist/store/1-live-preview.png` and
+  `2-controls.png`. At least one is required.
+- **Small promo tile** — `dist/store/promo-440x280.png`.
+- **Marquee promo tile** — `dist/store/promo-1400x560.png`.
+- **Detailed description** — the description under "Listing copy" above.
+
+### Privacy practices tab
+
+**Single purpose:**
+
+> Critter Cam replaces the user's face with an animated animal head in their
+> webcam video before it reaches a video-calling website. That is the
+> extension's only function.
+
+**Justification — `storage`:**
+
+> Stores the user's chosen avatar and fit settings — head size, position,
+> smoothing and a few toggles — so those choices persist between sessions. No
+> other data is stored, and none is transmitted.
+
+**Justification — host permissions:**
+
+> The filter works by replacing getUserMedia inside the meeting page, which is
+> the only place the camera is requested, so the extension's content scripts
+> must run on the video-calling sites the user joins: Google Meet, Zoom on the
+> web, Microsoft Teams, Webex, Whereby, Discord and Gather. The extension
+> requests no other host access, reads no page content, and does nothing on any
+> other site.
+
+**Remote code** — answer **No, I am not using remote code**. If a justification
+box appears anyway:
+
+> All JavaScript, the WebAssembly face-tracking runtime and the face-landmark
+> model are packaged inside the extension. It makes no network requests of any
+> kind and evaluates no code fetched at runtime.
+
+**Data usage** — leave every collected-data category unticked, then certify all
+three statements. They are true and testable: no network requests, camera
+frames processed in the page and discarded, and the only stored data is the
+settings object.
+
 ## Dashboard answers
 
 **Single purpose** — the store asks for one sentence, and a vague answer is a
