@@ -270,6 +270,31 @@
   var bytes = {};
   var waiting = {};
 
+  /*
+   * Parsing finishes well after the bytes land — textures decode
+   * asynchronously — and a picker that painted its thumbnail in between gets
+   * an empty one. `ready` resolves when a model has actually been built, so a
+   * caller can repaint then rather than guessing at a delay.
+   */
+  /*
+   * The first build of a model is kept, so a caller that needs a head *now* —
+   * a picker painting one thumbnail per animal — gets the real thing instead
+   * of an empty shell that fills a tick too late. One page has one avatar
+   * renderer, so a single instance can be handed out repeatedly; it is removed
+   * from the scene before it is added again.
+   */
+  var builtFor = {};
+
+  var readied = {};
+  function readyFor(id) {
+    if (!readied[id]) {
+      var entry = {};
+      entry.promise = new Promise(function (resolve) { entry.resolve = resolve; });
+      readied[id] = entry;
+    }
+    return readied[id];
+  }
+
   var loader = null;
   function getLoader(three) {
     if (!loader) loader = new three.GLTFLoader();
@@ -294,7 +319,14 @@
       return new Promise(function (resolve, reject) {
         try {
           getLoader(three).parse(data, config && config.resourcePath || '', function (gltf) {
-            try { resolve(adopt(three, gltf, config)); } catch (error) { reject(error); }
+            try {
+              var adopted = adopt(three, gltf, config);
+              if (config && config.id) {
+                if (!builtFor[config.id]) builtFor[config.id] = adopted;
+                readyFor(config.id).resolve(adopted.report);
+              }
+              resolve(adopted);
+            } catch (error) { reject(error); }
           }, reject);
         } catch (error) {
           reject(error);
@@ -319,6 +351,12 @@
     },
 
     has: function (id) { return !!bytes[id]; },
+
+    /** Resolves once `id` has been parsed and built at least once. */
+    ready: function (id) { return readyFor(id).promise; },
+
+    /** The head built for `id`, if one has been built already. */
+    built: function (id) { return builtFor[id] || null; },
 
     /** Adds registry entries to the animal picker. */
     registerAll: function (entries) {

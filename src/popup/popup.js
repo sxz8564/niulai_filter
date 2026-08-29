@@ -13,6 +13,7 @@
     { id: 'size', format: function (v) { return v.toFixed(2) + '×'; } },
     { id: 'offsetY', format: formatOffset },
     { id: 'offsetX', format: formatOffset },
+    { id: 'offsetZ', format: formatOffset },
     { id: 'smoothing', format: function (v) { return v <= 0 ? 'off' : Math.round(v * 100) + '%'; } },
     { id: 'detectFps', format: function (v) { return Math.round(v) + ' / sec'; } }
   ];
@@ -78,6 +79,12 @@
     });
     $('animalName').textContent = NS.animals.get(settings.animal).name;
     paintThumb($('brand'), settings.animal);
+
+    // Depth is a 3D notion; the flat-art fallback has no axis to move along.
+    var flat = !settings.render3d;
+    $('offsetZ').disabled = flat;
+    var depthRow = $('offsetZ').closest('.slider');
+    if (depthRow) depthRow.style.opacity = flat ? 0.45 : 1;
 
     // Tracking-driven controls are meaningless while the head is pinned.
     var pinned = settings.manual;
@@ -176,11 +183,22 @@
     return fetch(chrome.runtime.getURL('models/avatars/index.json'))
       .then(function (r) { return r.ok ? r.json() : []; })
       .then(function (entries) {
-        if (Array.isArray(entries) && entries.length) {
-          NS.avatarModels.registerAll(entries);
-          buildGrid();
-          reflect();
-        }
+        if (!Array.isArray(entries) || !entries.length) return;
+        NS.avatarModels.registerAll(entries);
+        buildGrid();
+        reflect();
+        entries.forEach(function (entry) {
+          // Without the bytes the thumbnail is an empty square, so fetch them
+          // here too and repaint once the model has been built.
+          fetch(chrome.runtime.getURL('models/avatars/' + entry.file))
+            .then(function (r) { return r.arrayBuffer(); })
+            .then(function (buffer) {
+              NS.avatarModels.provide(entry.id, buffer);
+              return NS.avatarModels.ready(entry.id);
+            })
+            .then(function () { buildGrid(); reflect(); })
+            .catch(function () { /* the flat-art thumbnail stands in */ });
+        });
       })
       .catch(function () { /* no registry is fine */ });
   }

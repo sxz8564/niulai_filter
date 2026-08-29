@@ -23,6 +23,13 @@
     /** Offset from the detected face centre, in head widths. */
     offsetX: 0,
     offsetY: -0.1,
+    /*
+     * Where the head sits along the axis you look down, in head widths. The
+     * camera is orthographic, so this does not move the head on screen or
+     * change its size: it moves the point the head turns about. Positive puts
+     * the pivot behind the face, so turning swings the muzzle further.
+     */
+    offsetZ: 0,
     /** Rotate the head with the head tilt. */
     followTilt: true,
     /** Drive mouth/eyes/brows from the face's expression. */
@@ -43,6 +50,7 @@
     size: [0.8, 3.0],
     offsetX: [-0.8, 0.8],
     offsetY: [-0.8, 0.8],
+    offsetZ: [-0.8, 0.8],
     smoothing: [0, 0.95],
     detectFps: [5, 30]
   };

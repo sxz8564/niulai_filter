@@ -60,6 +60,7 @@ To add another site, add its URL pattern to `host_permissions`, both
 | 3D avatar | Lit 3D model. Turn it off for flat art — lighter on old machines, and the automatic fallback where WebGL is unavailable. |
 | Head size | Head width as a multiple of your detected face width. Raise it until your own head is fully covered. |
 | Up / down, Left / right | Nudges the head off the detected face centre. |
+| Forward / back | Moves the head along the axis you look down. The camera is orthographic, so this changes nothing while you face it — what it moves is the point the head turns about, which is what to reach for when turning your head swings the avatar too far or too little. 3D only. |
 | Tilt with my head | Rotates the animal as you tilt. |
 | Mouth & eyes follow me | Drives the mouth, blinks and brows from your expression. |
 | Smoothing | Higher is calmer but lags slightly; lower snaps to the tracker. |

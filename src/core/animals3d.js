@@ -121,6 +121,11 @@
     var three = T();
 
     if (spec.model && NS.avatarModels) {
+      // Already parsed once: hand back the same head rather than an empty
+      // shell, so a single frame — a thumbnail — is not drawn before it fills.
+      var already = NS.avatarModels.built(spec.model.id);
+      if (already) return already;
+
       // Model bytes may not have arrived yet: hand back an empty group now and
       // fill it in when they do, so no frame is blocked on a download.
       var shell = new three.Group();
@@ -333,12 +338,23 @@
     var pixelRatio = 1;
     var sized = { w: 0, h: 0 };
 
+    /*
+     * Three nested groups, because each transform needs its own origin:
+     * `holder` is placed, scaled and turned; `pivot` slides the head along the
+     * view axis inside it, which is what moves the point it turns about; the
+     * built head hangs off that untouched.
+     */
     function ensureHead(spec) {
       if (headId === spec.id && head) return head;
-      if (head) scene.remove(head.group);
-      head = buildHead(spec);
+      if (head) scene.remove(head.holder);
+      var built = buildHead(spec);
+      var pivot = new three.Group();
+      pivot.add(built.group);
+      var holder = new three.Group();
+      holder.add(pivot);
+      head = { holder: holder, pivot: pivot, group: built.group, parts: built.parts };
       headId = spec.id;
-      scene.add(head.group);
+      scene.add(holder);
       return head;
     }
 
@@ -370,11 +386,12 @@
       if (!(width > 0) || !(height > 0)) return null;
       resize(width, height);
       var built = ensureHead(spec);
-      var group = built.group;
+      var group = built.holder;
       var parts = built.parts;
 
       group.position.set(pose.x - width / 2, -(pose.y - height / 2), 0);
       group.scale.setScalar(pose.size);
+      built.pivot.position.z = pose.depth || 0;
       group.rotation.set(
         (params.pitch || 0) * MAX_PITCH,
         (params.yaw || 0) * MAX_YAW,
@@ -413,7 +430,7 @@
         return canvas;
       },
       dispose: function () {
-        if (head) scene.remove(head.group);
+        if (head) scene.remove(head.holder);
         head = null;
         headId = null;
         try { renderer.dispose(); } catch (error) { /* context already gone */ }

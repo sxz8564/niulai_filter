@@ -25,6 +25,7 @@
     { id: 'size', format: function (v) { return v.toFixed(2) + '×'; } },
     { id: 'offsetY', format: formatOffset },
     { id: 'offsetX', format: formatOffset },
+    { id: 'offsetZ', format: formatOffset },
     { id: 'smoothing', format: function (v) { return v <= 0 ? 'off' : Math.round(v * 100) + '%'; } },
     { id: 'detectFps', format: function (v) { return Math.round(v) + ' / sec'; } }
   ];
@@ -83,6 +84,12 @@
     });
     $('animalName').textContent = NS.animals.get(settings.animal).name;
     paintThumb($('brand'), settings.animal, 52);
+
+    // Depth is a 3D notion; the flat-art fallback has no axis to move along.
+    var flat = !settings.render3d;
+    $('offsetZ').disabled = flat;
+    var depthRow = $('offsetZ').closest('.slider');
+    if (depthRow) depthRow.style.opacity = flat ? 0.45 : 1;
 
     compositor.setSettings(settings);
     detector.setFps(settings.detectFps);

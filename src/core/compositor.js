@@ -178,7 +178,7 @@
           try {
             layer = renderer.render(
               animals().get(s.animal),
-              { x: x, y: y, size: headW, roll: s.followTilt ? state.roll : 0 },
+              { x: x, y: y, size: headW, depth: s.offsetZ || 0, roll: s.followTilt ? state.roll : 0 },
               params, width, height
             );
           } catch (error) {
