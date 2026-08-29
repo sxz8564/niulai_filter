@@ -45,18 +45,49 @@ const icons = await page.evaluate(async ({ sizes, entry, modelBase64 }) => {
   // rather than capturing an empty plate.
   const spec = NS.animals.get(entry.id);
   const renderer = NS.avatar3d.sharedRenderer();
+  /*
+   * How many pixels one unit is worth depends on the avatar's own `scale`, so
+   * a fixed framing constant has to be retuned every time a model changes.
+   * Render once at a trial size, measure what was actually painted, and derive
+   * the framing from that instead.
+   */
+  const PROBE = 256;
+  const TRIAL = 120;
+  let fit = { perUnit: 0.6, dx: 0, dy: 0 };
   if (renderer) {
     const probe = document.createElement('canvas');
-    probe.width = probe.height = 64;
+    probe.width = probe.height = PROBE;
     const probeCtx = probe.getContext('2d');
     for (let i = 0; i < 100; i++) {
-      const layer = renderer.render(spec, { x: 32, y: 32, size: 44, roll: 0 }, {}, 64, 64);
-      probeCtx.clearRect(0, 0, 64, 64);
-      if (layer) probeCtx.drawImage(layer, 0, 0, 64, 64);
-      const pixels = probeCtx.getImageData(0, 0, 64, 64).data;
-      let painted = 0;
-      for (let p = 3; p < pixels.length; p += 4) if (pixels[p] > 8) painted++;
-      if (painted > 200) break;
+      const layer = renderer.render(spec, { x: PROBE / 2, y: PROBE / 2, size: TRIAL, roll: 0 }, {}, PROBE, PROBE);
+      probeCtx.clearRect(0, 0, PROBE, PROBE);
+      if (layer) probeCtx.drawImage(layer, 0, 0, PROBE, PROBE);
+      const pixels = probeCtx.getImageData(0, 0, PROBE, PROBE).data;
+      let count = 0, minX = PROBE, maxX = 0, minY = PROBE, maxY = 0;
+      for (let y = 0; y < PROBE; y++) {
+        for (let x = 0; x < PROBE; x++) {
+          if (pixels[(y * PROBE + x) * 4 + 3] <= 8) continue;
+          count++;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+      if (count > 400) {
+        /*
+         * Everything is converted to units — pose.size is pixels per unit —
+         * so the same numbers work at any plate size. The head is `spanUnits`
+         * across and sits `centre` away from the point it was rendered at.
+         */
+        const spanUnits = Math.max(maxX - minX, maxY - minY) / TRIAL;
+        fit = {
+          perUnit: 0.86 / spanUnits,
+          dx: ((minX + maxX) / 2 - PROBE / 2) / TRIAL,
+          dy: ((minY + maxY) / 2 - PROBE / 2) / TRIAL
+        };
+        break;
+      }
       await new Promise((r) => setTimeout(r, 50));
     }
   }
@@ -83,8 +114,14 @@ const icons = await page.evaluate(async ({ sizes, entry, modelBase64 }) => {
     ctx.roundRect(0, 0, size, size, radius);
     ctx.clip();
     if (renderer) {
-      // Fill the plate rather than using the picker's roomier framing.
-      const layer = renderer.render(spec, { x: size / 2, y: size * 0.54, size: size * 0.74, roll: 0 }, {}, size, size);
+      // Fill the plate, using the framing measured above.
+      const perUnit = size * fit.perUnit;
+      const layer = renderer.render(spec, {
+        x: size / 2 - fit.dx * perUnit,
+        y: size / 2 - fit.dy * perUnit,
+        size: perUnit,
+        roll: 0
+      }, {}, size, size);
       ctx.drawImage(layer, 0, 0, size, size);
     } else {
       ctx.translate(size / 2, size * 0.56);
