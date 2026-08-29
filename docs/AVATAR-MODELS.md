@@ -218,6 +218,22 @@ The angle is the one that just closes the lips — too little leaves it ajar at
 rest, too much folds the chin into the muzzle. Sweep three values and look;
 on the head shipped here it was 13°.
 
+#### Keeping the neck and shoulders
+
+Cropping lower gives a bust rather than a bare head. Two things then need
+saying, because both tools measure the whole crop by default:
+
+`--head <f>` tells the rigger what share of the crop, from the top, is head —
+everything below it holds still, and the eye, jaw and brow measurements stay in
+head widths. Do not expect it to be worked out from the shape: a muzzled
+character has no pinch at the neck, and its narrowest slice is the snout.
+
+The registry then needs `scale` and `offset`, because the loader fits on total
+width and a bust is wider than a head. With head width `h` and crop width `w`,
+`scale` is `w / h`, and `offset[1]` is minus the head centre's height in the
+crop, divided by `h`. That puts the head back at the size and place it had when
+cropped alone, with the body hanging below it.
+
 An authored rig always beats a derived one, so ask for morph targets first;
 this is what to do when the answer is no.
 

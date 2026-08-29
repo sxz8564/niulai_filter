@@ -11,6 +11,9 @@
  *                     0.05). Higher swings the whole muzzle, which reads as a
  *                     lengthening face rather than an opening mouth
  *     --band <f>      how far up the head the jaw rotation fades (default 0.22)
+ *     --head <f>      fraction of the model's height, from the top, that is
+ *                     head. 1 for a head-only crop; on a bust, the share above
+ *                     the shoulders. Everything below it holds still
  *     --report        print what was found and where, and write nothing
  *
  * Generators return sculpted heads with no rig at all, and a face that never
@@ -189,15 +192,41 @@ for (const v of all) for (let a = 0; a < 3; a++) {
   bounds.min[a] = Math.min(bounds.min[a], v.p[a]);
   bounds.max[a] = Math.max(bounds.max[a], v.p[a]);
 }
-const size = [0, 1, 2].map((a) => bounds.max[a] - bounds.min[a]);
+const fullSize = [0, 1, 2].map((a) => bounds.max[a] - bounds.min[a]);
+
+/*
+ * A crop may be a bare head or a bust with neck and shoulders, and every
+ * measurement below — eye height, jaw hinge, how far a brow lifts — is in head
+ * widths, not model widths. Where the head ends is not something to guess at:
+ * a muzzled character has no pinch at the neck, and its narrowest slice is the
+ * snout, so a width scan puts the neck through the middle of the face. Say it
+ * outright with --head instead; the default treats the whole crop as head,
+ * which is what a head-only crop is.
+ */
+const headFraction = opt('head', 1);
+const neckY = bounds.max[1] - fullSize[1] * headFraction;
+
+const headMin = [bounds.min[0], neckY, bounds.min[2]];
+const headMax = bounds.max.slice();
+{
+  // Measure the head on its own vertices, not on the shoulders below it.
+  const above = all.filter((v) => v.p[1] >= neckY);
+  for (let a = 0; a < 3; a++) {
+    headMin[a] = Math.min(...above.map((v) => v.p[a]));
+    headMax[a] = Math.max(...above.map((v) => v.p[a]));
+  }
+  headMin[1] = Math.min(headMin[1], neckY);
+}
+const head = { min: headMin, max: headMax, size: [0, 1, 2].map((a) => headMax[a] - headMin[a]) };
+const size = head.size;
 const unit = size[0];   // one head width, the scale everything else is in
 
 const centroid = (list) => [0, 1, 2].map((a) => list.reduce((s, v) => s + v.p[a], 0) / list.length);
 
 // The face is the front half; anything behind that is skull, ears and neck.
-const frontOf = (list, depth) => list.filter((v) => v.p[2] > bounds.min[2] + size[2] * depth);
+const frontOf = (list, depth) => list.filter((v) => v.p[2] > head.min[2] + size[2] * depth);
 // An open mouth is dark too, so eyes are looked for in the upper face only.
-const upper = bounds.min[1] + size[1] * 0.45;
+const upper = head.min[1] + size[1] * 0.45;
 const darkFront = frontOf(all.filter((v) => v.tag === DARK && v.p[1] > upper), 0.55);
 const paleFront = frontOf(all.filter((v) => v.tag === PALE), 0.55);
 
@@ -249,20 +278,21 @@ const muzzle = paleFront.length > 20 ? {
 // one sits; without eyes to go by, fall back to the middle of the head.
 const eyeLevel = eyes.filter(Boolean).length
   ? eyes.filter(Boolean).reduce((s, e) => s + e.centre[1], 0) / eyes.filter(Boolean).length
-  : bounds.min[1] + size[1] * 0.6;
+  : head.min[1] + size[1] * 0.6;
 const mouthLine = muzzle
   ? muzzle.bottom + (muzzle.top - muzzle.bottom) * 0.30
   : eyeLevel - size[1] * 0.35;
 const hinge = {
   y: mouthLine + (eyeLevel - mouthLine) * hingeFraction,
-  z: bounds.min[2] + size[2] * 0.35,
+  z: head.min[2] + size[2] * 0.35,
   band: size[1] * bandFraction
 };
 
 if (reportOnly || process.env.RIG_VERBOSE) {
   const f = (v) => (Array.isArray(v) ? v.map((n) => n.toFixed(3)).join(', ') : v.toFixed(3));
   console.log(`vertices     ${all.length}`);
-  console.log(`bounds       ${f(size)}  (w x h x d)`);
+  console.log(`bounds       ${f(fullSize)}  (w x h x d)`);
+  console.log(`head         ${f(size)}  above y ${f(neckY)}`);
   console.log(`dark / pale  ${all.filter((v) => v.tag === DARK).length} / ${all.filter((v) => v.tag === PALE).length}`);
   eyes.forEach((eye, i) => console.log(`eye ${i === 0 ? "left " : 'right'}    ${eye ? f(eye.centre) + `  radius ${f(eye.radius)}, ${eye.brows.length} brow verts` : 'not found'}`));
   console.log(`muzzle       ${muzzle ? f(muzzle.centre) + `  y ${f(muzzle.bottom)}..${f(muzzle.top)}` : 'not found'}`);
@@ -282,8 +312,10 @@ function smoothstep(edge0, edge1, x) {
 function jawWeight(p) {
   const below = smoothstep(hinge.y, hinge.y - hinge.band, p[1]);
   // Leave the back of the head alone; this is a muzzle drop, not a neck bend.
-  const front = smoothstep(bounds.min[2] + size[2] * 0.15, bounds.min[2] + size[2] * 0.55, p[2]);
-  return below * front;
+  const front = smoothstep(head.min[2] + size[2] * 0.15, head.min[2] + size[2] * 0.55, p[2]);
+  // A bust has a body under the jaw; it stays where it is.
+  const aboveNeck = smoothstep(neckY - size[1] * 0.12, neckY + size[1] * 0.04, p[1]);
+  return below * front * aboveNeck;
 }
 
 /** Rotates the lower face about the hinge, weighted so it blends into the skull. */
@@ -328,7 +360,7 @@ function smile(p) {
   if (!muzzle) return [0, 0, 0];
   const nearMouth = 1 - smoothstep(size[1] * 0.06, size[1] * 0.18, Math.abs(p[1] - mouthLine));
   const corner = smoothstep(muzzle.halfWidth * 0.25, muzzle.halfWidth * 0.95, Math.abs(p[0]));
-  const front = smoothstep(bounds.min[2] + size[2] * 0.45, bounds.min[2] + size[2] * 0.75, p[2]);
+  const front = smoothstep(head.min[2] + size[2] * 0.45, head.min[2] + size[2] * 0.75, p[2]);
   const weight = nearMouth * corner * front * smileAmount;
   if (weight <= 0) return [0, 0, 0];
   return [Math.sign(p[0]) * unit * 0.03 * weight, unit * 0.05 * weight, 0];
