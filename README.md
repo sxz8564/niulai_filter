@@ -53,6 +53,15 @@ meeting.
 To add another site, add its URL pattern to `host_permissions`, both
 `content_scripts` entries and `web_accessible_resources` in `manifest.json`.
 
+## Publishing
+
+`docs/CHROME-WEB-STORE.md` covers packaging and the store listing.
+
+```bash
+npm run package      # dist/critter-cam-<version>.zip, validated before it builds
+npm run store:shots  # dist/store/*.png at 1280x800
+```
+
 ## Troubleshooting
 
 | Symptom | Cause |

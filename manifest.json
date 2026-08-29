@@ -93,8 +93,7 @@
         "vendor/tasks-vision/vision_bundle.js",
         "vendor/tasks-vision/wasm/*",
         "models/*",
-        "models/avatars/*",
-        "docs/reference/*"
+        "models/avatars/*"
       ],
       "matches": [
         "https://meet.google.com/*",

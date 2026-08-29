@@ -17,7 +17,12 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+/*
+ * CRITTER_EXTENSION_DIR points the run at an unpacked store build instead of
+ * the repository, which is the only way to find out whether the zip you are
+ * about to upload actually contains everything the extension loads.
+ */
+const root = process.env.CRITTER_EXTENSION_DIR || join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = process.argv[2] || join(root, '.smoke');
 mkdirSync(outDir, { recursive: true });
 
@@ -51,6 +56,21 @@ const extensionId = new URL(worker.url()).host;
 console.log(`extension id: ${extensionId}\n`);
 
 /* ------------------------------------------------ 1. preview page + model */
+
+/*
+ * A rigged model to exercise the loader with. The repository has a purpose-made
+ * one under docs/; a store build ships only the avatars, so fall back to those.
+ */
+const SAMPLE_MODEL = `async function loadSampleModel() {
+  for (const path of ['../../docs/reference/example-head.glb', '../../models/avatars/niulai.glb']) {
+    try {
+      // A missing chrome-extension:// URL rejects rather than returning a 404.
+      const response = await fetch(path);
+      if (response.ok) return await response.arrayBuffer();
+    } catch (error) { /* try the next one */ }
+  }
+  throw new Error('no sample model to load');
+}`;
 
 const preview = await context.newPage();
 const previewErrors = [];
@@ -103,12 +123,13 @@ check('3D avatar renderer starts', avatar3d.supported && avatar3d.renderer,
 
 // Imported models: the preview page can read the extension's own files, so the
 // committed example exercises parsing, fitting and rig detection.
-const modelReport = await preview.evaluate(async () => {
+const modelReport = await preview.evaluate(async (helper) => {
+  eval(helper);
   const NS = globalThis.__CritterCam;
-  const buffer = await (await fetch('../../docs/reference/example-head.glb')).arrayBuffer();
+  const buffer = await loadSampleModel();
   const built = await NS.avatarModels.parse(buffer, { id: 'smoke-example' });
   return built.report;
-}).catch((error) => ({ error: String(error.message || error) }));
+}, SAMPLE_MODEL).catch((error) => ({ error: String(error.message || error) }));
 
 check('glTF model imports and fits', !modelReport.error && modelReport.measured &&
   modelReport.measured.width > 0,
@@ -118,9 +139,10 @@ check('model rig is detected by name', !modelReport.error && modelReport.channel
 
 // Detecting the rig is not the same as driving it: the renderer once posed
 // imported heads without ever calling their animate(), so nothing moved.
-const driven = await preview.evaluate(async () => {
+const driven = await preview.evaluate(async (helper) => {
+  eval(helper);
   const NS = globalThis.__CritterCam;
-  const buffer = await (await fetch('../../docs/reference/example-head.glb')).arrayBuffer();
+  const buffer = await loadSampleModel();
   const built = await NS.avatarModels.parse(buffer, { id: 'smoke-driven' });
   built.parts.animate({ jawOpen: 1 });
   let open = 0;
@@ -133,7 +155,7 @@ const driven = await preview.evaluate(async () => {
     if (node.morphTargetInfluences) shut = Math.max(shut, ...node.morphTargetInfluences);
   });
   return { open, shut };
-}).catch((error) => ({ error: String(error.message || error) }));
+}, SAMPLE_MODEL).catch((error) => ({ error: String(error.message || error) }));
 check('expression params reach the model', driven.open === 1 && driven.shut === 0,
   driven.error || `influence ${driven.shut} -> ${driven.open}`);
 

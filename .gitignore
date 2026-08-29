@@ -2,3 +2,4 @@ node_modules/
 .smoke/
 *.zip
 package-lock.json
+dist/
