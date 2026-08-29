@@ -151,11 +151,25 @@ node tools/crop-avatar.mjs incoming.glb head.glb --figure 0 --top 0.30
 
 `--figure` picks a figure left to right, `--top` the fraction of its height to
 keep, and `--box x0,y0,z0,x1,y1,z1` overrides both. Triangles are kept whole by
-their centroid, node transforms are baked, the result is recentred, and smooth
-normals are written even when the source had none.
+their centroid, node transforms are baked, the result is recentred, and normals,
+UVs, vertex colours and the material — textures and all — come across with the
+geometry. A source without normals gets smooth ones. `--slim` keeps only the
+base colour map, dropping metallic-roughness, normal, occlusion and emissive.
 
-Only `render-avatar.mjs` needs a browser; if Playwright cannot download its
-own Chromium, point `PLAYWRIGHT_CHROMIUM` at one already on disk.
+Generators texture for print, not for video: 2K or 4K maps of a whole body,
+several megabytes that every camera page then downloads. Shrink them:
+
+```bash
+node tools/shrink-textures.mjs head.glb head-small.glb --max 1024
+```
+
+Geometry, materials and UVs are untouched — only the image bytes change, so it
+is safe to run after cropping. On the model shipped here, 1024px maps took the
+file from 5.0 MB to 311 KB with no visible difference at video-call size.
+
+`render-avatar.mjs` and `shrink-textures.mjs` need a browser; if Playwright
+cannot download its own Chromium, point `PLAYWRIGHT_CHROMIUM` at one already
+on disk.
 
 ## 7. Testing a model
 
@@ -195,7 +209,7 @@ and reload the extension at `chrome://extensions`.
 | Black or untextured | Textures referenced externally. Re-export with images embedded. A model with no materials at all is coloured by `tint` |
 | Faceted, like cut glass | The export had no normals. They are computed on load, but exporting them is better |
 | Does not appear in the picker | The `id` collides with a built-in animal — check the console and rename it |
-| Frame rate drops | Over budget (§3). Decimate the mesh and shrink textures |
+| Frame rate drops | Over budget (§3). Decimate the mesh, and shrink textures with `tools/shrink-textures.mjs` |
 
 ## 9. Exporting from Blender
 

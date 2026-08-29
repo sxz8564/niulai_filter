@@ -12,6 +12,7 @@
     "validate:avatar": "node tools/validate-avatar.mjs",
     "render:avatar": "node tools/render-avatar.mjs",
     "crop:avatar": "node tools/crop-avatar.mjs",
+    "shrink:textures": "node tools/shrink-textures.mjs",
     "example:avatar": "node tools/make-example-avatar.mjs"
   },
   "devDependencies": {
