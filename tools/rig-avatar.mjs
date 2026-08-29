@@ -13,6 +13,11 @@
  *     --band <f>      how far up the head the jaw rotation fades (default 0.22)
  *     --mouth <y>     the mouth's height in model units, when the tool cannot
  *                     find it. --report prints what it did find
+ *     --beak <z>      the beak's base in model units. Rigs a bird: the lower
+ *                     mandible alone rotates about the gape, instead of a jaw
+ *                     hinge behind the muzzle swinging the whole lower face
+ *     --gape <deg>    tilt of the plane dividing the two mandibles (default 18)
+ *     --spread <deg>  how far below that the mandible reaches (default 55)
  *     --head <f>      fraction of the model's height, from the top, that is
  *                     head. 1 for a head-only crop; on a bust, the share above
  *                     the shoulders. Everything below it holds still
@@ -69,6 +74,13 @@ const smileAmount = opt('smile', 1.1);
  * the mesh to the shape the sculptor actually modelled.
  */
 const closeDegrees = opt('close', 0);
+// A beak's base, in model z. Given, jawOpen becomes a beak rather than a jaw:
+// see the hinge below. --gape tilts the plane that tells the two mandibles
+// apart, which on a sculpted open beak only has to fall in the gap between
+// them.
+const beakZ = opt('beak', null);
+const gapeSlope = opt('gape', 18);
+const spreadDegrees = opt('spread', 55);
 
 /* ------------------------------------------------------------ read glTF */
 
@@ -456,6 +468,17 @@ const hinge = mouthOverride !== null
 if (opt('band', null) !== null) hinge.band = size[1] * bandFraction;
 if (opt('hinge', null) !== null) hinge.y = mouthLine + (eyeLevel - mouthLine) * hingeFraction;
 
+/*
+ * A beak is not a jaw. The mammal hinge sits behind the muzzle and swings
+ * everything below it, which on a bird takes the throat and breast along and
+ * reads as a chin that is not there. --beak moves the pivot out to the gape,
+ * where the two mandibles actually meet, and rotates the lower mandible alone.
+ */
+if (beakZ !== null) {
+  hinge.y = mouthLine;
+  hinge.z = beakZ;
+}
+
 if (reportOnly || process.env.RIG_VERBOSE) {
   const f = (v) => (Array.isArray(v) ? v.map((n) => n.toFixed(3)).join(', ') : v.toFixed(3));
   console.log(`vertices     ${all.length}`);
@@ -466,7 +489,16 @@ if (reportOnly || process.env.RIG_VERBOSE) {
   console.log(`muzzle       ${muzzle ? f(muzzle.centre) + `  y ${f(muzzle.bottom)}..${f(muzzle.top)}` : 'not found'}`);
   console.log(`mouth        ${mouth ? `${mouth.count} verts by ${mouth.how}, y ${f(mouth.bottom)}..${f(mouth.top)}, ${f(mouth.height)} tall, ${f(mouth.halfWidth * 2)} wide` : 'no opening found — falling back to the muzzle box'}`);
   console.log(`mouth line   y ${f(mouthLine)}`);
-  console.log(`hinge        y ${f(hinge.y)}  z ${f(hinge.z)}  band ${f(hinge.band)}`);
+  console.log(beakZ !== null
+    ? `gape hinge   y ${f(hinge.y)}  z ${f(hinge.z)}  divide ${gapeSlope}° below horizontal`
+    : `hinge        y ${f(hinge.y)}  z ${f(hinge.z)}  band ${f(hinge.band)}`);
+  if (beakZ !== null) {
+    const lower = all.filter((v) => beakWeight(v.p) > 0.5);
+    console.log(`lower beak   ${lower.length} verts` + (lower.length
+      ? `, y ${f(Math.min(...lower.map((v) => v.p[1])))}..${f(Math.max(...lower.map((v) => v.p[1])))}` +
+        `  z ${f(Math.min(...lower.map((v) => v.p[2])))}..${f(Math.max(...lower.map((v) => v.p[2])))}`
+      : ''));
+  }
   if (reportOnly) process.exit(0);
 }
 
@@ -477,8 +509,30 @@ function smoothstep(edge0, edge1, x) {
   return t * t * (3 - 2 * t);
 }
 
+/**
+ * How much of the beak rotation a vertex takes: 1 on the lower mandible, 0 on
+ * the upper one and on the head behind them. The dividing plane runs forward
+ * from the gape at --gape degrees below horizontal; on a beak sculpted open it
+ * only has to pass through the gap, so the angle is not delicate.
+ */
+function beakWeight(p) {
+  const forward = smoothstep(hinge.z - unit * 0.02, hinge.z + unit * 0.03, p[2]);
+  if (forward <= 0) return 0;
+  const reach = p[2] - hinge.z;
+  const divide = hinge.y - reach * Math.tan(gapeSlope * Math.PI / 180);
+  // A second plane through the same gape closes the wedge underneath. Without
+  // it the breast, which on this bird swells forward as far as the beak's
+  // base, sits below the divide too and swings with the mandible.
+  const floor = hinge.y - reach * Math.tan((gapeSlope + spreadDegrees) * Math.PI / 180);
+  const fade = unit * 0.015;
+  return forward *
+    smoothstep(divide + fade, divide - fade, p[1]) *
+    smoothstep(floor - fade, floor + fade, p[1]);
+}
+
 /** How much of the jaw rotation a vertex takes: 1 on the chin, 0 on the skull. */
 function jawWeight(p) {
+  if (beakZ !== null) return beakWeight(p);
   const below = smoothstep(hinge.y, hinge.y - hinge.band, p[1]);
   // Leave the back of the head alone; this is a muzzle drop, not a neck bend.
   const front = smoothstep(head.min[2] + size[2] * 0.15, head.min[2] + size[2] * 0.55, p[2]);
