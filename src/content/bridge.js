@@ -23,27 +23,9 @@
 
   var detector = NS.createDetectorClient({
     onFace: function (face) {
-      pendingFace = { face: face };
-    },
-    /*
-     * The mask rides along with the pose so the page sees one message per
-     * frame, and it is transferred rather than copied — a bitmap crossing
-     * worlds by value every frame would be a needless megabyte a second.
-     */
-    onMask: function (mask) {
-      var payload = pendingFace || { face: null };
-      pendingFace = null;
-      payload.mask = mask || null;
-      window.postMessage(
-        Object.assign({ ch: CHANNEL, dir: 'ext', type: 'face' }, payload),
-        '*',
-        mask ? [mask] : []
-      );
+      toPage('face', { face: face });
     }
   });
-
-  // onFace always fires first and onMask right after it, for the same frame.
-  var pendingFace = null;
 
   function toPage(type, payload) {
     window.postMessage(Object.assign({ ch: CHANNEL, dir: 'ext', type: type }, payload || {}), '*');
@@ -51,7 +33,6 @@
 
   function pushSettings() {
     detector.setFps(settings.detectFps);
-    detector.setSegment(settings.enabled && settings.background !== 'none');
     toPage('settings', { settings: settings });
     updateDetectorRunState();
     ensureModelBytes(settings.animal);
@@ -134,14 +115,9 @@
     })
     .catch(function () { registry = []; });
 
-  /*
-   * Detection is pure overhead when the head is off or pinned in place — but
-   * the same frames feed the segmenter, so a chosen scene keeps the pump
-   * running even when the face is not being tracked.
-   */
+  /** Detection is pure overhead when the mask is off or pinned manually. */
   function shouldDetect() {
-    if (!activePipeline || !settings.enabled) return false;
-    return !settings.manual || settings.background !== 'none';
+    return !!activePipeline && settings.enabled && !settings.manual;
   }
 
   function updateDetectorRunState() {

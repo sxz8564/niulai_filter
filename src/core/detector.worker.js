@@ -24,7 +24,7 @@ if (!self.Vision) {
   importScripts(new URL('../../vendor/tasks-vision/vision_bundle.js', self.location.href).href);
 }
 
-const { FilesetResolver, FaceLandmarker, ImageSegmenter } = self.Vision;
+const { FilesetResolver, FaceLandmarker } = self.Vision;
 
 /** Landmark indices from MediaPipe's canonical face mesh. */
 const LM = {
@@ -41,20 +41,6 @@ let landmarker = null;
 let delegateInUse = null;
 let lastTimestamp = 0;
 let busy = false;
-
-/*
- * Body segmentation, for replacing the room behind you. It is a second model
- * on every frame, so it is built the first time a background is chosen and
- * torn down when the last one is turned off — nobody pays for a feature they
- * are not using.
- */
-let segmenter = null;
-let segmenterPromise = null;
-let segmentWanted = false;
-let maskCanvas = null;
-let maskCtx = null;
-let segFileset = null;
-let segModel = null;
 
 /**
  * Nose height as a fraction of the eye-to-chin span when looking straight
@@ -139,91 +125,12 @@ function poseFromLandmarks(marks, width, height) {
   };
 }
 
-/**
- * Builds the segmenter on demand. Its model arrives with `init` — as a buffer
- * from a host page, as a URL on an extension page — and is kept so the model
- * can be rebuilt without another round trip when a background is turned back
- * on.
- */
-function ensureSegmenter() {
-  if (segmenter) return Promise.resolve(segmenter);
-  if (segmenterPromise) return segmenterPromise;
-  if (!ImageSegmenter || !segFileset || !segModel) return Promise.resolve(null);
-  const options = {
-    baseOptions: Object.assign({ delegate: delegateInUse || 'GPU' }, segModel),
-    runningMode: 'VIDEO',
-    // 0 for the room, 255 for you, which is an alpha channel already.
-    outputCategoryMask: true,
-    outputConfidenceMasks: false
-  };
-  segmenterPromise = ImageSegmenter.createFromOptions(segFileset, options)
-    .catch(function () {
-      options.baseOptions.delegate = 'CPU';
-      return ImageSegmenter.createFromOptions(segFileset, options);
-    })
-    .then(function (built) {
-      segmenter = built;
-      segmenterPromise = null;
-      return built;
-    })
-    .catch(function (error) {
-      segmenterPromise = null;
-      self.postMessage({ type: 'segmentError', message: String(error && error.message || error) });
-      return null;
-    });
-  return segmenterPromise;
-}
-
-function closeSegmenter() {
-  if (segmenter) {
-    try { segmenter.close(); } catch (error) { /* already gone */ }
-    segmenter = null;
-  }
-}
-
-/**
- * Runs segmentation and hands back a transferable bitmap whose alpha is the
- * mask. Building it here keeps the pixel loop off the render thread, and an
- * ImageBitmap moves without a copy where a byte array would not.
- */
-function segment(bitmap, ts) {
-  if (!segmenter) return null;
-  const result = segmenter.segmentForVideo(bitmap, ts);
-  const mask = result && result.categoryMask;
-  if (!mask) return null;
-  try {
-    const w = mask.width;
-    const h = mask.height;
-    const values = mask.getAsUint8Array();
-    if (!maskCanvas || maskCanvas.width !== w || maskCanvas.height !== h) {
-      maskCanvas = new OffscreenCanvas(w, h);
-      maskCtx = maskCanvas.getContext('2d');
-    }
-    const image = maskCtx.createImageData(w, h);
-    const data = image.data;
-    for (let i = 0, p = 0; i < values.length; i++, p += 4) {
-      data[p] = 255;
-      data[p + 1] = 255;
-      data[p + 2] = 255;
-      data[p + 3] = values[i];
-    }
-    maskCtx.putImageData(image, 0, 0);
-    return maskCanvas.transferToImageBitmap();
-  } finally {
-    mask.close();
-    if (result.close) result.close();
-  }
-}
-
 async function init(config) {
   // Either a directory to resolve against, or the two files themselves as
   // blob URLs, which is what a page-origin worker can actually load.
   const fileset = config.wasmLoaderPath
     ? { wasmLoaderPath: config.wasmLoaderPath, wasmBinaryPath: config.wasmBinaryPath }
     : await FilesetResolver.forVisionTasks(config.wasmDir);
-  segFileset = fileset;
-  if (config.segmenterBuffer) segModel = { modelAssetBuffer: new Uint8Array(config.segmenterBuffer) };
-  else if (config.segmenterUrl) segModel = { modelAssetPath: config.segmenterUrl };
   const model = config.modelBuffer
     ? { modelAssetBuffer: new Uint8Array(config.modelBuffer) }
     : { modelAssetPath: config.modelUrl };
@@ -304,15 +211,7 @@ self.onmessage = async (event) => {
     const started = performance.now();
     try {
       const face = detect(bitmap, msg.ts);
-      // Both models read the same frame, so segmenting costs no extra capture.
-      // The timestamp has to keep rising for each, and detect() already
-      // advanced it, so reuse the value it settled on.
-      let mask = null;
-      if (segmentWanted) {
-        try { mask = segment(bitmap, lastTimestamp); } catch (error) { mask = null; }
-      }
-      const message = { type: 'result', face, ts: msg.ts, cost: performance.now() - started, mask };
-      self.postMessage(message, mask ? [mask] : []);
+      self.postMessage({ type: 'result', face, ts: msg.ts, cost: performance.now() - started });
     } catch (error) {
       self.postMessage({ type: 'error', message: String(error && error.message || error) });
     } finally {
@@ -322,17 +221,9 @@ self.onmessage = async (event) => {
     return;
   }
 
-  if (msg.type === 'segment') {
-    segmentWanted = !!msg.on;
-    if (segmentWanted) ensureSegmenter();
-    else closeSegmenter();
-    return;
-  }
-
   if (msg.type === 'close') {
     if (landmarker) landmarker.close();
     landmarker = null;
-    closeSegmenter();
     self.close();
   }
 };

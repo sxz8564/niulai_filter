@@ -8,8 +8,7 @@
   var settings = NS.normalizeSettings({});
   var compositor = NS.createCompositor();
   var detector = NS.createDetectorClient({
-    onFace: function (face) { compositor.onFace(face); },
-    onMask: function (mask) { compositor.setMask(mask); }
+    onFace: function (face) { compositor.onFace(face); }
   });
   // Handy from the console, and used by tools/smoke-test.mjs.
   NS.previewDetector = detector;
@@ -101,8 +100,6 @@
 
     compositor.setSettings(settings);
     detector.setFps(settings.detectFps);
-    // Segmentation is a second model per frame: only run it for a real scene.
-    detector.setSegment(settings.enabled && settings.background !== 'none');
     updateDetectorRunState();
   }
 
@@ -112,11 +109,7 @@
   }
 
   function updateDetectorRunState() {
-    // Pinning the head stops face tracking, but the segmenter reads the same
-    // frames, so a chosen scene still needs the pump.
-    var wanted = running && settings.enabled &&
-      (!settings.manual || settings.background !== 'none');
-    if (wanted) detector.attach(video);
+    if (running && settings.enabled && !settings.manual) detector.attach(video);
     else detector.detach();
   }
 

@@ -18,13 +18,6 @@ code and the filter has to keep working offline.
 - Copyright 2023 The MediaPipe Authors
 - Licence: Apache License 2.0 — https://www.apache.org/licenses/LICENSE-2.0
 
-## MediaPipe Selfie Segmenter model
-
-- File: `models/selfie_segmenter.tflite`
-- Source: https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite
-- Copyright 2023 The MediaPipe Authors
-- Licence: Apache License 2.0 — https://www.apache.org/licenses/LICENSE-2.0
-
 ## Three.js
 
 - File: `vendor/three/three.iife.js`

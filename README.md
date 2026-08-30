@@ -22,9 +22,9 @@ frames on a canvas, and hands the meeting the filtered stream instead.
 - **Real face tracking** with MediaPipe Face Landmarker: the head follows your
   position, size and tilt, turns with you, and its mouth, eyes and brows follow
   your own.
-- **Five painted scenes** to stand in for the room behind you, cut out with
-  MediaPipe's body segmenter. Off by default, because it is a second model on
-  every frame.
+- **Five painted scenes.** Pick one and it replaces the camera picture
+  outright — the animal head is all anyone sees, on the backdrop you chose,
+  and no pixel of your room ever reaches the meeting.
 - **Runs in the meeting, not just the preview.** Everyone on the call sees the
   animal.
 - **Fully offline.** The model and runtime are bundled; nothing is uploaded and
@@ -136,7 +136,7 @@ npm run store:promo  # store icon and both promo tiles
 
 | Setting | What it does |
 | --- | --- |
-| Scene | Replaces the room behind you with one of five painted backdrops. **None** leaves your room as it is and runs no segmentation at all. |
+| Scene | Replaces the camera picture with one of five painted backdrops. The head is drawn over your face either way, so nothing of you is kept behind it — your body goes too. **None** keeps your own room. |
 | 3D avatar | Lit 3D model. Turn it off for flat art — lighter on old machines, and the automatic fallback where WebGL is unavailable. |
 | Head size | Head width as a multiple of your detected face width. Raise it until your own head is fully covered. |
 | Up / down, Left / right | Nudges the head off the detected face centre. |
@@ -164,8 +164,7 @@ src/page/patch.js          MAIN world — swaps in a canvas stream
     │                        │                 │
     │                        ▼                 │
     │            src/core/detector.worker.js ──┘
-    │            MediaPipe Face Landmarker, and the body segmenter
-    │            when a scene is chosen, on one extension-origin worker
+    │            MediaPipe Face Landmarker on extension-origin worker
     ▼
 filtered MediaStream → the meeting
 ```
@@ -186,11 +185,10 @@ Three details are load-bearing:
   answered from inside. Extension pages skip all of that and load the worker
   from its URL. It is a *classic* worker either way: module workers have no
   `importScripts`.
-- **Both models read one frame.** The detector already scales each frame to
-  320px for the face; the segmenter reads the same bitmap, so a scene costs an
-  inference but not a second capture. The mask comes back as an `ImageBitmap`
-  whose alpha is you, transferred rather than copied, and is scaled up over the
-  frame — which feathers the edge for free.
+- **A scene needs no segmentation.** The head covers your face whatever is
+  behind it, so a chosen scene simply replaces the frame rather than being
+  composited behind a cut-out of you. That is one `drawImage` instead of a
+  second model on every frame — and it is why your body goes with the room.
 - **The camera is never dropped on failure.** If the pipeline cannot start, the
   original camera stream is handed back untouched rather than a black frame.
 

@@ -20,8 +20,8 @@
     animal: 'niulai',
     /*
      * Id in the background registry, or 'none' to keep the room you are in.
-     * Anything but 'none' costs a second model per frame — the segmenter that
-     * separates you from the wall behind you — so it stays off until asked for.
+     * A scene replaces the camera picture outright: the head is drawn over
+     * your face anyway, so there is nothing of you to keep behind it.
      */
     background: 'none',
     /** Head width as a multiple of the detected face width. */

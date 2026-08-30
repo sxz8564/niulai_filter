@@ -43,7 +43,6 @@
       announcePipelines();
     } else if (msg.type === 'face') {
       compositor.onFace(msg.face || null);
-      compositor.setMask(msg.mask || null);
     } else if (msg.type === 'backgrounds') {
       if (NS.backgrounds) NS.backgrounds.registerAll(msg.registry);
     } else if (msg.type === 'backgroundData') {
