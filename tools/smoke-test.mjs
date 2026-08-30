@@ -147,6 +147,41 @@ check('every picker thumbnail is drawn', thumbs.length > 0 && blank.length === 0
   blank.length ? `${blank.length} of ${thumbs.length} empty: ${blank.map((t) => t.id).join(', ')}`
     : `${thumbs.length} thumbnails`);
 
+/*
+ * The popup and the preview edit the same stored settings, so a setting that
+ * reaches only one of them is a setting half the users cannot change. This is
+ * how the forward/back slider arrived: added to one view, missing from the
+ * other until someone noticed.
+ */
+const describeControls = () => {
+  const NS = globalThis.__CritterCam;
+  const rows = {};
+  for (const key of Object.keys(NS.DEFAULTS)) {
+    const el = document.getElementById(key);
+    if (!el) {
+      // The animal is chosen from a grid of thumbnails, not a named input.
+      rows[key] = key === 'animal' && document.getElementById('animalGrid') ? 'grid' : 'missing';
+      continue;
+    }
+    rows[key] = el.type === 'range' ? `range ${el.min}..${el.max}/${el.step}`
+      : el.tagName === 'SELECT' ? 'select ' + Array.from(el.options).map((o) => o.value).join('/')
+      : el.type;
+  }
+  return rows;
+};
+const previewControls = await preview.evaluate(describeControls);
+const popup = await context.newPage();
+await popup.goto(`chrome-extension://${extensionId}/src/popup/popup.html`);
+await popup.waitForTimeout(1500);
+const popupControls = await popup.evaluate(describeControls);
+await popup.close();
+const outOfStep = Object.keys(previewControls).filter(
+  (key) => previewControls[key] !== popupControls[key] || previewControls[key] === 'missing');
+check('popup and preview offer the same settings', outOfStep.length === 0,
+  outOfStep.length
+    ? outOfStep.map((k) => `${k}: preview ${previewControls[k]} vs popup ${popupControls[k]}`).join('; ')
+    : `${Object.keys(previewControls).length} settings in both`);
+
 // Imported models: the preview page can read the extension's own files, so the
 // committed example exercises parsing, fitting and rig detection.
 const modelReport = await preview.evaluate(async (helper) => {
