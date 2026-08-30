@@ -148,6 +148,55 @@ check('every picker thumbnail is drawn', thumbs.length > 0 && blank.length === 0
     : `${thumbs.length} thumbnails`);
 
 /*
+ * The compositor is running by now, so it holds the selected model's group —
+ * and a three.js object has one parent, so adding it to that scene takes it
+ * out of the picker's renderer. The picker then draws an empty scene for the
+ * one animal the user is actually wearing: it appears on click and vanishes on
+ * the next repaint.
+ */
+const paintOne = `(spec) => {
+  const NS = globalThis.__CritterCam;
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d');
+  NS.avatar3d.paintThumb(ctx, spec, 64);
+  const d = ctx.getImageData(0, 0, 64, 64).data;
+  let n = 0;
+  for (let i = 3; i < d.length; i += 4) if (d[i] > 8) n++;
+  return n / 4096;
+}`;
+const shared = await preview.evaluate((body) => {
+  const NS = globalThis.__CritterCam;
+  const paint = eval(body);
+  const selected = NS.animals.get(document.querySelector('.animal[aria-pressed="true"]').dataset.animal);
+  return { id: selected.id, before: paint(selected), after: paint(selected) };
+}, paintOne);
+check('the picker still draws the head the compositor is using',
+  shared.before > 0.05 && shared.after > 0.05,
+  `${shared.id}: ${(shared.before * 100).toFixed(0)}% then ${(shared.after * 100).toFixed(0)}%`);
+
+/*
+ * A lost WebGL context does not throw — draw calls quietly do nothing — so a
+ * renderer kept after one goes on painting blank squares for the rest of the
+ * session. Browsers drop contexts under memory pressure and when the GPU
+ * process restarts, which is not rare with several meeting tabs open.
+ */
+const recovered = await preview.evaluate(async (body) => {
+  const NS = globalThis.__CritterCam;
+  const paint = eval(body);
+  const spec = NS.animals.list()[0];
+  const before = paint(spec);
+  const layer = NS.avatar3d.sharedRenderer().thumbnail(spec, 64);
+  const gl = layer.getContext('webgl2') || layer.getContext('webgl');
+  gl.getExtension('WEBGL_lose_context').loseContext();
+  await new Promise((r) => setTimeout(r, 200));
+  return { before, after: paint(spec) };
+}, paintOne);
+check('a lost WebGL context does not empty the picker',
+  recovered.before > 0.05 && recovered.after > 0.05,
+  `${(recovered.before * 100).toFixed(0)}% before, ${(recovered.after * 100).toFixed(0)}% after`);
+
+/*
  * The popup and the preview edit the same stored settings, so a setting that
  * reaches only one of them is a setting half the users cannot change. This is
  * how the forward/back slider arrived: added to one view, missing from the

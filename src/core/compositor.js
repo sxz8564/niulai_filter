@@ -34,6 +34,13 @@
     var tried3d = false;
 
     function get3d() {
+      // A context lost mid-call would otherwise leave the meeting on flat art
+      // until the tab is reloaded. Drop the dead renderer and build another.
+      if (renderer3d && renderer3d.isLost && renderer3d.isLost()) {
+        try { renderer3d.dispose(); } catch (error) { /* the context is already gone */ }
+        renderer3d = null;
+        tried3d = false;
+      }
       if (tried3d) return renderer3d;
       tried3d = true;
       if (NS.avatar3d && NS.avatar3d.isSupported()) {

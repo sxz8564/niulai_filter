@@ -313,6 +313,26 @@
     } catch (error) {
       return null;
     }
+    /*
+     * A lost context does not throw: draw calls quietly do nothing and the
+     * canvas comes back blank. Callers would take that blank for a picture and
+     * paint it over the head that was there, so track loss and say so.
+     * Browsers drop contexts under memory pressure, when the GPU process
+     * restarts, and once enough tabs hold one at the same time.
+     */
+    var lost = false;
+    canvas.addEventListener('webglcontextlost', function (event) {
+      // Without preventDefault the context can never be restored.
+      event.preventDefault();
+      lost = true;
+    });
+    canvas.addEventListener('webglcontextrestored', function () { lost = false; });
+    function isLost() {
+      if (lost) return true;
+      var gl = renderer.getContext();
+      return !gl || gl.isContextLost();
+    }
+
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = three.SRGBColorSpace;
     renderer.toneMapping = three.ACESFilmicToneMapping;
@@ -384,8 +404,18 @@
      */
     function render(spec, pose, params, width, height) {
       if (!(width > 0) || !(height > 0)) return null;
+      if (isLost()) return null;
       resize(width, height);
       var built = ensureHead(spec);
+      /*
+       * An imported model is parsed once and its group handed to every
+       * renderer that asks for it, but a three.js object has one parent: the
+       * compositor adding it to its scene takes it out of the picker's. The
+       * thumbnail then draws an empty scene, which is why the selected head
+       * would appear on click and vanish on the next repaint. Take it back
+       * before drawing; both renderers pose it themselves anyway.
+       */
+      if (built.group.parent !== built.pivot) built.pivot.add(built.group);
       var group = built.holder;
       var parts = built.parts;
 
@@ -423,11 +453,13 @@
 
     return {
       render: render,
+      isLost: isLost,
       /** Renders one head centred in a square, for pickers and previews. */
       thumbnail: function (spec, size) {
         var scale = spec.thumbScale ? spec.thumbScale * 0.78 : 0.46;
-        render(spec, { x: size / 2, y: size * (spec.thumbCentre || 0.54), size: size * scale, roll: 0 }, {}, size, size);
-        return canvas;
+        var drawn = render(spec, { x: size / 2, y: size * (spec.thumbCentre || 0.54), size: size * scale, roll: 0 },
+          {}, size, size);
+        return drawn ? canvas : null;
       },
       dispose: function () {
         if (head) scene.remove(head.holder);
@@ -445,8 +477,17 @@
     isSupported: isSupported,
     createRenderer: createRenderer,
     buildHead: buildHead,
-    /** Lazily created renderer for thumbnail grids. */
+    /**
+     * Lazily created renderer for thumbnail grids. A renderer whose context
+     * has gone is thrown away rather than kept: it would draw nothing for the
+     * rest of the session, and the next call can have a working one.
+     */
     sharedRenderer: function () {
+      if (shared && shared.isLost()) {
+        try { shared.dispose(); } catch (error) { /* the context is already gone */ }
+        shared = null;
+        sharedTried = false;
+      }
       if (sharedTried) return shared;
       sharedTried = true;
       shared = createRenderer();
@@ -461,8 +502,10 @@
       if (renderer) {
         try {
           var layer = renderer.thumbnail(spec, size);
-          ctx.drawImage(layer, 0, 0, size, size);
-          return true;
+          if (layer) {
+            ctx.drawImage(layer, 0, 0, size, size);
+            return true;
+          }
         } catch (error) { /* fall through to flat art */ }
       }
       return false;
