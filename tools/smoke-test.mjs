@@ -130,6 +130,23 @@ const avatar3d = await preview.evaluate(() => ({
 check('3D avatar renderer starts', avatar3d.supported && avatar3d.renderer,
   `webgl ${avatar3d.supported}, renderer ${avatar3d.renderer}`);
 
+// The picker paints each thumbnail once, and a model's bytes arrive after
+// that. Without a repaint when they land, every square stays empty.
+const thumbs = await preview.evaluate(() => {
+  const out = [];
+  for (const canvas of document.querySelectorAll('.animal canvas')) {
+    const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+    let lit = 0;
+    for (let i = 3; i < data.length; i += 4) if (data[i] > 8) lit++;
+    out.push({ id: canvas.parentElement.dataset.animal, lit: lit / (data.length / 4) });
+  }
+  return out;
+});
+const blank = thumbs.filter((t) => t.lit < 0.05);
+check('every picker thumbnail is drawn', thumbs.length > 0 && blank.length === 0,
+  blank.length ? `${blank.length} of ${thumbs.length} empty: ${blank.map((t) => t.id).join(', ')}`
+    : `${thumbs.length} thumbnails`);
+
 // Imported models: the preview page can read the extension's own files, so the
 // committed example exercises parsing, fitting and rig detection.
 const modelReport = await preview.evaluate(async (helper) => {

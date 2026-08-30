@@ -140,14 +140,21 @@
       .then(function (entries) {
         if (!Array.isArray(entries) || !entries.length) return;
         NS.avatarModels.registerAll(entries);
-        entries.forEach(function (entry) {
-          fetch(MODEL_DIR + entry.file)
-            .then(function (r) { return r.arrayBuffer(); })
-            .then(function (buf) { NS.avatarModels.provide(entry.id, buf); })
-            .catch(function () { /* reported when selected */ });
-        });
         buildGrid();
         apply();
+        entries.forEach(function (entry) {
+          // The grid above is drawn before any of this has arrived, so its
+          // thumbnails are empty squares. Repaint each one as its model
+          // finishes parsing, the way the popup does.
+          fetch(MODEL_DIR + entry.file)
+            .then(function (r) { return r.arrayBuffer(); })
+            .then(function (buf) {
+              NS.avatarModels.provide(entry.id, buf);
+              return NS.avatarModels.ready(entry.id);
+            })
+            .then(function () { buildGrid(); apply(); })
+            .catch(function () { /* reported when selected */ });
+        });
       })
       .catch(function () { /* no registry is fine */ });
   }
