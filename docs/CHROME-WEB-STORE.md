@@ -69,7 +69,7 @@ round as any other package change rather than on its own.
 > • Six characters to choose from, each textured and rigged, with a mouth that
 >   opens onto a modelled interior when you speak.
 > • Bring your own. Drop a .glb model in and it appears in the picker.
-> • Five painted scenes. Pick one and it replaces the camera picture entirely,
+> • Seven painted scenes. Pick one and it replaces the camera picture entirely,
 >   so all anyone sees is the animal head on the backdrop you chose.
 > • Entirely offline. Face tracking runs on your machine, no frame ever leaves
 >   your computer, and the extension makes no network requests at all.

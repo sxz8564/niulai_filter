@@ -3,5 +3,7 @@
   { "id": "lantern-night", "name": "Lantern Night", "file": "lantern-night.webp" },
   { "id": "pale-plain",    "name": "Pale Plain",    "file": "pale-plain.webp" },
   { "id": "star-valley",   "name": "Star Valley",   "file": "star-valley.webp" },
-  { "id": "golden-grove",  "name": "Golden Grove",  "file": "golden-grove.webp" }
+  { "id": "golden-grove",  "name": "Golden Grove",  "file": "golden-grove.webp" },
+  { "id": "paintbox-wood", "name": "Paintbox Wood", "file": "paintbox-wood.webp" },
+  { "id": "cattle-valley", "name": "Cattle Valley", "file": "cattle-valley.webp" }
 ]

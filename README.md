@@ -22,7 +22,7 @@ frames on a canvas, and hands the meeting the filtered stream instead.
 - **Real face tracking** with MediaPipe Face Landmarker: the head follows your
   position, size and tilt, turns with you, and its mouth, eyes and brows follow
   your own.
-- **Five painted scenes.** Pick one and it replaces the camera picture
+- **Seven painted scenes.** Pick one and it replaces the camera picture
   outright — the animal head is all anyone sees, on the backdrop you chose,
   and no pixel of your room ever reaches the meeting.
 - **Runs in the meeting, not just the preview.** Everyone on the call sees the
@@ -136,7 +136,7 @@ npm run store:promo  # store icon and both promo tiles
 
 | Setting | What it does |
 | --- | --- |
-| Scene | Replaces the camera picture with one of five painted backdrops. The head is drawn over your face either way, so nothing of you is kept behind it — your body goes too. **None** keeps your own room. |
+| Scene | Replaces the camera picture with one of seven painted backdrops. The head is drawn over your face either way, so nothing of you is kept behind it — your body goes too. **None** keeps your own room. |
 | 3D avatar | Lit 3D model. Turn it off for flat art — lighter on old machines, and the automatic fallback where WebGL is unavailable. |
 | Head size | Head width as a multiple of your detected face width. Raise it until your own head is fully covered. |
 | Up / down, Left / right | Nudges the head off the detected face centre. |
