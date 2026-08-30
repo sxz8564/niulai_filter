@@ -8,13 +8,16 @@ There is no virtual camera driver and nothing to install outside Chrome. The
 extension intercepts `getUserMedia`, draws the animal head onto the camera
 frames on a canvas, and hands the meeting the filtered stream instead.
 
-![The six characters](docs/animals.png)
+![Critter Cam's preview page: a red bull head on a painted orchard backdrop, with the character and scene pickers beside it](docs/preview.png)
 
 ## What it does
 
 - **Six rigged 3D characters** — Niulai, Baola, Wolfwolf, NiuMama, NiuBaba and
   XiaoNiao — textured, with mouths that open onto a modelled interior, eyes
   that blink one at a time, and brows that lift.
+
+  ![The six characters](docs/animals.png)
+
 - **Bring your own model.** Drop a `.glb` in `models/avatars/` and it appears in
   the picker; `tools/` will crop a head out of a full body, shrink its textures
   and build the expression shapes if it arrived without a rig. See
@@ -25,6 +28,9 @@ frames on a canvas, and hands the meeting the filtered stream instead.
 - **Seven painted scenes.** Pick one and it replaces the camera picture
   outright — the animal head is all anyone sees, on the backdrop you chose,
   and no pixel of your room ever reaches the meeting.
+
+  ![The seven scenes](docs/scenes.png)
+
 - **Runs in the meeting, not just the preview.** Everyone on the call sees the
   animal.
 - **Fully offline.** The model and runtime are bundled; nothing is uploaded and
@@ -67,13 +73,13 @@ deeper.
 **6. That is it.**
 The live preview page opens by itself. Click **Start camera**, allow the camera
 when Chrome asks, and pick an animal. Adjust **Head size** until your own head
-is covered.
+is covered. Pick a **Scene** if you would rather not show the room you are in.
 
 ### Everyday use
 
-Open the extension from the toolbar to change animals or nudge the fit —
-changes apply live, mid-call. If you do not see its icon, click the puzzle-piece
-button in the toolbar and pin **Critter Cam**.
+Open the extension from the toolbar to change animals, switch scenes or nudge
+the fit — changes apply live, mid-call. If you do not see its icon, click the
+puzzle-piece button in the toolbar and pin **Critter Cam**.
 
 ### Things worth knowing
 
@@ -116,7 +122,7 @@ To add another site, add its URL pattern to `host_permissions`, both
 
 ```bash
 npm run package      # dist/critter-cam-<version>.zip, validated before it builds
-npm run store:shots  # screenshots at 1280x800
+npm run store:shots  # three screenshots at 1280x800, plus docs/preview.png
 npm run store:promo  # store icon and both promo tiles
 ```
 
@@ -199,6 +205,7 @@ npm install          # Playwright, for the dev tools only
 npm run test:pose    # head-pose geometry checks, no camera needed
 npm run test:smoke   # loads the extension in Chromium with a fake camera
 npm run icons        # regenerates icons/*.png from the default avatar
+npm run showcase     # regenerates docs/animals.png and docs/scenes.png
 ```
 
 `tools/smoke-test.mjs` is the useful one: it loads the unpacked extension,

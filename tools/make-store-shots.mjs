@@ -1,11 +1,17 @@
 /*
- * Renders the Chrome Web Store screenshots into dist/store/.
+ * Renders the Chrome Web Store screenshots into dist/store/, and the running
+ * shot the README uses into docs/.
  *
  *   node tools/make-store-shots.mjs
  *
  * The store wants 1280x800 (or 640x400) PNGs, at least one, up to five. These
  * are shot from the extension actually running against Chrome's fake camera,
  * so the listing shows what the extension does rather than a mock-up.
+ *
+ * Shot 2 is the one to lead with: a scene replaces the camera picture outright,
+ * so nothing of the fake camera is in the frame and it looks exactly as it
+ * would on a real machine. Shot 1 still has Chrome's green test pattern behind
+ * the head, and wants retaking on a machine with a webcam.
  */
 import { createRequire } from 'node:module';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -46,19 +52,40 @@ await preview.evaluate(() => document.getElementById('manual')?.click());
 await preview.waitForTimeout(1500);
 await preview.screenshot({ path: join(out, '1-live-preview.png') });
 
-/* 2 — the popup, where people pick an avatar and adjust the fit */
-// Back to defaults first: the preview above pinned the head, which dims the
-// tracking controls, and a listing should not show them greyed out.
+/* 2 — the same, with a scene behind the head */
+await preview.evaluate(() => {
+  const scene = document.querySelector('.scene:not([data-background="none"])');
+  if (scene) scene.click();
+});
+await preview.waitForTimeout(2500);
+await preview.screenshot({ path: join(out, '2-scene.png') });
+// The README shows the same view, so write it while the page is set up.
+mkdirSync(join(root, 'docs'), { recursive: true });
+await preview.screenshot({ path: join(root, 'docs', 'preview.png') });
+
+/* 3 — the popup, where people pick an avatar and a scene */
+// Back to defaults first: the preview above pinned the head and chose a scene,
+// and a listing should not show the tracking controls greyed out.
 await preview.evaluate(() => chrome.storage.sync.set({ settings: {} }));
 
 const popup = await context.newPage();
+await popup.setViewportSize({ width: 420, height: 900 });
 await popup.goto(`chrome-extension://${id}/src/popup/popup.html`);
 await popup.waitForTimeout(2500);
+// The popup is taller than the viewport now that it has a scene picker, so
+// this has to be a full-page capture or the bottom of it is simply cut off.
 const body = await popup.locator('body').boundingBox();
-const shot = await popup.screenshot({ clip: { x: 0, y: 0, width: Math.ceil(body.width), height: Math.ceil(body.height) } });
+const shot = await popup.screenshot({
+  fullPage: true,
+  clip: { x: 0, y: 0, width: Math.ceil(body.width), height: Math.ceil(body.height) }
+});
+console.log(`  popup is ${Math.ceil(body.width)}x${Math.ceil(body.height)}`);
 
-// A popup is a tall narrow window; centre it on the canvas the store expects
-// rather than leaving it stranded in a corner of a 1280x800 frame.
+/*
+ * A popup is a tall narrow window: 342x1079 against a 1280x800 frame, so
+ * centring it leaves most of the canvas empty. Set it to one side and give the
+ * other side a line about what the controls are for.
+ */
 const composed = await popup.evaluate(async ({ dataUrl, W, H }) => {
   const image = new Image();
   await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; image.src = dataUrl; });
@@ -70,17 +97,38 @@ const composed = await popup.evaluate(async ({ dataUrl, W, H }) => {
   bg.addColorStop(1, '#e7e2db');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
-  const scale = Math.min(1, (H - 64) / image.height);
+
+  const scale = (H - 56) / image.height;
   const w = image.width * scale, h = image.height * scale;
-  const x = (W - w) / 2, y = (H - h) / 2;
+  const x = W - w - 96, y = (H - h) / 2;
+  ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.18)';
   ctx.shadowBlur = 40;
   ctx.shadowOffsetY = 10;
   ctx.drawImage(image, x, y, w, h);
+  ctx.restore();
+
+  const left = 96;
+  const font = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+  ctx.fillStyle = '#1d1b19';
+  ctx.font = `600 46px ${font}`;
+  ctx.fillText('Pick a head.', left, 320);
+  ctx.fillStyle = '#e0703a';
+  ctx.fillText('Pick a scene.', left, 380);
+  ctx.fillStyle = '#736c64';
+  ctx.font = `20px ${font}`;
+  for (const [i, line] of [
+    'Six rigged characters and seven painted',
+    'backdrops, with sliders for the fit.',
+    'Everything runs on your own machine.'
+  ].entries()) {
+    ctx.fillText(line, left, 436 + i * 30);
+  }
   return canvas.toDataURL('image/png');
 }, { dataUrl: 'data:image/png;base64,' + shot.toString('base64'), W, H });
-writeFileSync(join(out, '2-controls.png'), Buffer.from(composed.split(',')[1], 'base64'));
+writeFileSync(join(out, '3-controls.png'), Buffer.from(composed.split(',')[1], 'base64'));
 
 await context.close();
 console.log(out);
-for (const name of ['1-live-preview.png', '2-controls.png']) console.log('  ' + name);
+for (const name of ['1-live-preview.png', '2-scene.png', '3-controls.png']) console.log('  ' + name);
+console.log(join(root, 'docs', 'preview.png'));

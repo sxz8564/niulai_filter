@@ -97,7 +97,7 @@ Every file below is produced by `npm run store:promo` (and `store:shots`) into
 | Field | File | Size |
 | --- | --- | --- |
 | Store icon | `icon-128.png` | 128 x 128 |
-| Screenshots | `1-live-preview.png`, `2-controls.png` | 1280 x 800 |
+| Screenshots | `1-live-preview.png`, `2-scene.png`, `3-controls.png` | 1280 x 800 |
 | Small promo tile | `promo-440x280.png` | 440 x 280 |
 | Marquee promo tile | `promo-1400x560.png` | 1400 x 560 |
 
@@ -210,9 +210,12 @@ the user's own signed-in browsers.
 
 ## Before you submit
 
-- [ ] Retake the screenshots on a machine with a real camera. The ones the
-      tool produces here come from Chrome's fake capture device, which is a
-      flat green field — accurate, but it looks broken in a listing.
+- [ ] Retake screenshot 1 on a machine with a real camera. It comes from
+      Chrome's fake capture device, which is a flat green field — accurate,
+      but it looks broken in a listing. Screenshots 2 and 3 do not need it:
+      a scene replaces the camera picture outright, so nothing of the fake
+      device is in shot 2, and shot 3 is the popup. Lead with shot 2 if you
+      upload before retaking, since the store shows the first one largest.
 - [ ] Consider shortening the extension name. "Critter Cam — AR animal head
       for your webcam" is 44 characters against a 45 limit, and the store
       truncates long names in most places it shows them. "Critter Cam" with

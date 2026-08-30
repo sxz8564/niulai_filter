@@ -1,5 +1,6 @@
 /*
- * Renders docs/animals.png — the line-up used in the README.
+ * Renders the two line-ups the README uses: docs/animals.png, the characters,
+ * and docs/scenes.png, the backdrops.
  *
  *   node tools/make-showcase.mjs
  */
@@ -83,4 +84,52 @@ const dataUrl = await page.evaluate(async (models) => {
 mkdirSync(join(root, 'docs'), { recursive: true });
 writeFileSync(join(root, 'docs/animals.png'), Buffer.from(dataUrl.split(',')[1], 'base64'));
 console.log('docs/animals.png');
+
+/* The scenes, as a strip of labelled thumbnails. */
+const scenes = JSON.parse(readFileSync(join(root, 'models/backgrounds/index.json'), 'utf8')).map((e) => ({
+  entry: e,
+  base64: readFileSync(join(root, 'models/backgrounds', e.file)).toString('base64')
+}));
+
+const sceneUrl = await page.evaluate(async (scenes) => {
+  const images = await Promise.all(scenes.map(async (s) => {
+    const image = new Image();
+    await new Promise((resolve, reject) => {
+      image.onload = resolve; image.onerror = reject;
+      image.src = 'data:image/webp;base64,' + s.base64;
+    });
+    return { name: s.entry.name, image };
+  }));
+
+  const cols = 4;
+  const rows = Math.ceil(images.length / cols);
+  const cellW = 208, cellH = 117, label = 22, gap = 10, pad = 14;
+  const scale = 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = (pad * 2 + cols * cellW + (cols - 1) * gap) * scale;
+  canvas.height = (pad * 2 + rows * (cellH + label) + (rows - 1) * gap) * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+  ctx.fillStyle = '#f6f5f3';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  images.forEach((item, index) => {
+    const x = pad + (index % cols) * (cellW + gap);
+    const y = pad + Math.floor(index / cols) * (cellH + label + gap);
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(x, y, cellW, cellH, 8);
+    ctx.clip();
+    ctx.drawImage(item.image, x, y, cellW, cellH);
+    ctx.restore();
+    ctx.fillStyle = '#736c64';
+    ctx.font = '600 13px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(item.name, x + cellW / 2, y + cellH + 16);
+  });
+  return canvas.toDataURL('image/png');
+}, scenes);
+
+writeFileSync(join(root, 'docs/scenes.png'), Buffer.from(sceneUrl.split(',')[1], 'base64'));
+console.log('docs/scenes.png');
 await browser.close();
