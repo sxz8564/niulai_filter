@@ -19,6 +19,7 @@
   function createDetectorClient(options) {
     var onFace = (options && options.onFace) || function () {};
     var onStatus = (options && options.onStatus) || function () {};
+    var onMask = (options && options.onMask) || function () {};
 
     var worker = null;
     var scratch = null;
@@ -31,7 +32,8 @@
     var lastSentAt = 0;
     var sentAt = 0;
     var fps = 20;
-    var status = { state: 'idle', delegate: null, error: null, cost: 0, faces: 0, processed: 0, lastFaceAt: 0 };
+    var segmenting = false;
+    var status = { state: 'idle', delegate: null, error: null, segmentError: null, cost: 0, faces: 0, processed: 0, lastFaceAt: 0 };
 
     function publish(patch) {
       if (patch) for (var k in patch) status[k] = patch[k];
@@ -61,7 +63,8 @@
         fetch(url('vendor/tasks-vision/wasm/vision_wasm_internal.js')).then(function (r) { return r.text(); }),
         fetch(url('src/core/detector.worker.js')).then(function (r) { return r.text(); }),
         fetch(url('vendor/tasks-vision/wasm/vision_wasm_internal.wasm')).then(function (r) { return r.blob(); }),
-        fetch(url('models/face_landmarker.task')).then(function (r) { return r.arrayBuffer(); })
+        fetch(url('models/face_landmarker.task')).then(function (r) { return r.arrayBuffer(); }),
+        fetch(url('models/selfie_segmenter.tflite')).then(function (r) { return r.arrayBuffer(); })
       ]).then(function (parts) {
         /*
          * MediaPipe loads its wasm glue with importScripts. That would be a
@@ -72,19 +75,33 @@
         var preamble = 'self.__critterInlined = ' + JSON.stringify(LOADER_SENTINEL) + ';\n' +
           'var __critterImport = self.importScripts.bind(self);\n' +
           'self.importScripts = function () {\n' +
+          '  var inlined = false;\n' +
           '  var rest = Array.prototype.filter.call(arguments, function (u) {\n' +
-          '    return String(u) !== self.__critterInlined;\n' +
+          '    if (String(u) === self.__critterInlined) { inlined = true; return false; }\n' +
+          '    return true;\n' +
           '  });\n' +
           '  if (rest.length) __critterImport.apply(self, rest);\n' +
+          '  if (inlined && self.__critterModuleFactory) self.ModuleFactory = self.__critterModuleFactory;\n' +
           '};\n';
-        var source = preamble + parts[1] + '\n;\n' + parts[0] + '\n;\n' + parts[2];
+        /*
+         * MediaPipe clears ModuleFactory after building each task and expects
+         * the loader script to define it again for the next one. Loaded from a
+         * URL that happens by itself; inlined it cannot, so the factory is
+         * saved as the glue defines it and the shim above puts it back. Without
+         * this the second task — the body segmenter — fails to build with
+         * "ModuleFactory not set." and only the face detector ever runs.
+         */
+        var source = preamble + parts[1] +
+          '\n;\nself.__critterModuleFactory = self.ModuleFactory;\n' +
+          parts[0] + '\n;\n' + parts[2];
         return {
           worker: new Worker(URL.createObjectURL(new Blob([source], { type: 'text/javascript' }))),
           init: {
             type: 'init',
             wasmLoaderPath: LOADER_SENTINEL,
             wasmBinaryPath: URL.createObjectURL(parts[3]),
-            modelBuffer: parts[4]
+            modelBuffer: parts[4],
+            segmenterBuffer: parts[5]
           }
         };
       });
@@ -109,6 +126,9 @@
             status.faces = 0;
           }
           onFace(msg.face || null);
+          onMask(msg.mask || null);
+        } else if (msg.type === 'segmentError') {
+          publish({ segmentError: msg.message });
         } else if (msg.type === 'dropped') {
           inFlight = false;
         } else if (msg.type === 'error') {
@@ -138,8 +158,10 @@
         worker.postMessage({
           type: 'init',
           wasmDir: chrome.runtime.getURL('vendor/tasks-vision/wasm'),
-          modelUrl: chrome.runtime.getURL('models/face_landmarker.task')
+          modelUrl: chrome.runtime.getURL('models/face_landmarker.task'),
+          segmenterUrl: chrome.runtime.getURL('models/selfie_segmenter.tflite')
         });
+        if (segmenting) worker.postMessage({ type: 'segment', on: true });
         starting = false;
         return true;
       }
@@ -147,7 +169,8 @@
       workerFromBlob().then(function (built) {
         worker = built.worker;
         attachHandlers(worker);
-        worker.postMessage(built.init, [built.init.modelBuffer]);
+        worker.postMessage(built.init, [built.init.modelBuffer, built.init.segmenterBuffer]);
+        if (segmenting) worker.postMessage({ type: 'segment', on: true });
         starting = false;
       }).catch(function (error) {
         starting = false;
@@ -232,6 +255,17 @@
       },
       setFps: function (value) {
         fps = Math.max(1, Math.min(30, value || 20));
+      },
+      /*
+       * Turns body segmentation on or off. It is a whole second model, so it
+       * is only built once a background asks for it, and torn down again when
+       * the last one is turned off.
+       */
+      setSegment: function (on) {
+        on = !!on;
+        if (segmenting === on) return;
+        segmenting = on;
+        if (worker) worker.postMessage({ type: 'segment', on: on });
       },
       getStatus: function () { return status; },
       destroy: function () {

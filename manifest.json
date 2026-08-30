@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Critter Cam \u2014 AR animal head for your webcam",
-  "version": "1.0.14",
+  "version": "1.1.0",
   "description": "Replaces your head with an animated animal, live in your webcam feed, so everyone on your video call sees the animal, not you.",
   "minimum_chrome_version": "116",
   "permissions": [
@@ -57,6 +57,7 @@
         "src/core/animals.js",
         "src/core/model-loader.js",
         "src/core/animals3d.js",
+        "src/core/backgrounds.js",
         "src/core/compositor.js",
         "src/page/patch.js"
       ],
@@ -93,7 +94,8 @@
         "vendor/tasks-vision/vision_bundle.js",
         "vendor/tasks-vision/wasm/*",
         "models/*",
-        "models/avatars/*"
+        "models/avatars/*",
+        "models/backgrounds/*"
       ],
       "matches": [
         "https://meet.google.com/*",

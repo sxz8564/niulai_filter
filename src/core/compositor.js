@@ -33,6 +33,21 @@
     var renderer3d = null;
     var tried3d = false;
 
+    /*
+     * The newest body mask, as an ImageBitmap whose alpha is you. It arrives
+     * at the detector's rate and is drawn at the camera's, so a frame is
+     * usually painted with a mask a little older than it — which is fine, and
+     * far cheaper than segmenting every frame.
+     */
+    var mask = null;
+    var scene = null;      // offscreen canvas the person is cut out on
+    var sceneCtx = null;
+
+    function setMask(bitmap) {
+      if (mask && mask.close) mask.close();
+      mask = bitmap || null;
+    }
+
     function get3d() {
       // A context lost mid-call would otherwise leave the meeting on flat art
       // until the tab is reloaded. Drop the dead renderer and build another.
@@ -148,15 +163,61 @@
       }
     }
 
+    /** Draws `image` scaled to cover the canvas, cropping the overflow. */
+    function drawCover(ctx, image, width, height) {
+      var iw = image.width || 1;
+      var ih = image.height || 1;
+      var scale = Math.max(width / iw, height / ih);
+      var w = iw * scale;
+      var h = ih * scale;
+      ctx.drawImage(image, (width - w) / 2, (height - h) / 2, w, h);
+    }
+
     /**
-     * Draws the head over the current canvas contents.
+     * Paints the camera frame, over a chosen scene when there is one.
+     *
+     * The scene goes down first, then the frame with everything but you erased
+     * from it. The mask is a fraction of the frame's size, so scaling it up
+     * feathers the edge, which is what keeps the cut-out from looking like
+     * scissors work.
+     */
+    function paintSource(ctx, source, width, height) {
+      var backdrop = state.settings.enabled && NS.backgrounds
+        ? NS.backgrounds.image(state.settings.background)
+        : null;
+      if (!backdrop || !mask) {
+        ctx.drawImage(source, 0, 0, width, height);
+        return;
+      }
+      if (!scene || scene.width !== width || scene.height !== height) {
+        scene = document.createElement('canvas');
+        scene.width = width;
+        scene.height = height;
+        sceneCtx = scene.getContext('2d');
+      }
+      sceneCtx.globalCompositeOperation = 'copy';
+      sceneCtx.drawImage(source, 0, 0, width, height);
+      sceneCtx.globalCompositeOperation = 'destination-in';
+      sceneCtx.drawImage(mask, 0, 0, width, height);
+      sceneCtx.globalCompositeOperation = 'source-over';
+
+      drawCover(ctx, backdrop, width, height);
+      ctx.drawImage(scene, 0, 0, width, height);
+    }
+
+    /**
+     * Paints the frame and draws the head over it.
      * @param {CanvasRenderingContext2D} ctx output context
      * @param {number} width  canvas width in px
      * @param {number} height canvas height in px
+     * @param {HTMLVideoElement} [source] the camera frame. Callers that have
+     *   already painted it themselves may leave this out, but then a chosen
+     *   background is not applied — the frame is already down.
      */
-    function drawFrame(ctx, width, height) {
+    function drawFrame(ctx, width, height, source) {
       var now = performance.now();
       step(now);
+      if (source) paintSource(ctx, source, width, height);
 
       var s = state.settings;
       if (!s.enabled || state.opacity <= 0.003 || !state.seeded) return;
@@ -244,6 +305,7 @@
     return {
       setSettings: setSettings,
       onFace: onFace,
+      setMask: setMask,
       drawFrame: drawFrame,
       getSettings: function () { return state.settings; },
       getStats: function () {

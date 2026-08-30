@@ -18,6 +18,12 @@
     render3d: true,
     /** Id of the animal in the animal registry. */
     animal: 'niulai',
+    /*
+     * Id in the background registry, or 'none' to keep the room you are in.
+     * Anything but 'none' costs a second model per frame — the segmenter that
+     * separates you from the wall behind you — so it stays off until asked for.
+     */
+    background: 'none',
     /** Head width as a multiple of the detected face width. */
     size: 1.62,
     /** Offset from the detected face centre, in head widths. */

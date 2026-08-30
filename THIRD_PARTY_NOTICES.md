@@ -18,6 +18,13 @@ code and the filter has to keep working offline.
 - Copyright 2023 The MediaPipe Authors
 - Licence: Apache License 2.0 — https://www.apache.org/licenses/LICENSE-2.0
 
+## MediaPipe Selfie Segmenter model
+
+- File: `models/selfie_segmenter.tflite`
+- Source: https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite
+- Copyright 2023 The MediaPipe Authors
+- Licence: Apache License 2.0 — https://www.apache.org/licenses/LICENSE-2.0
+
 ## Three.js
 
 - File: `vendor/three/three.iife.js`
@@ -36,6 +43,13 @@ A copy of the Apache License 2.0 is included in `vendor/LICENSE-Apache-2.0.txt`.
   Meshy AI from that design, then cropped, retextured and rigged by the tools
   in `tools/`. Check the terms of whichever generator plan produced a model
   before redistributing it.
+
+## Scenes
+
+- Files: `models/backgrounds/*.webp`
+- Supplied by the repository owner and re-encoded to WebP at 1600x900 by the
+  tools here. Like the character models, check the terms of whichever generator
+  produced them before redistributing.
 
 Everything else in this repository — the animal artwork, the camera pipeline
 and the interface — is covered by the licence in `LICENSE`, which is MIT: it

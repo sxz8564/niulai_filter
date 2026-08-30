@@ -43,6 +43,11 @@
       announcePipelines();
     } else if (msg.type === 'face') {
       compositor.onFace(msg.face || null);
+      compositor.setMask(msg.mask || null);
+    } else if (msg.type === 'backgrounds') {
+      if (NS.backgrounds) NS.backgrounds.registerAll(msg.registry);
+    } else if (msg.type === 'backgroundData') {
+      if (NS.backgrounds) NS.backgrounds.provide(msg.id, msg.buffer);
     } else if (msg.type === 'models') {
       if (NS.avatarModels) NS.avatarModels.registerAll(msg.registry);
     } else if (msg.type === 'modelData') {
@@ -154,8 +159,9 @@
     if (pipeline.stopped) return;
     try {
       syncCanvasSize(pipeline);
-      pipeline.ctx.drawImage(pipeline.video, 0, 0, pipeline.canvas.width, pipeline.canvas.height);
-      compositor.drawFrame(pipeline.ctx, pipeline.canvas.width, pipeline.canvas.height);
+      // The compositor paints the frame itself: with a background chosen it
+      // has to put the scene down before the camera's own pixels.
+      compositor.drawFrame(pipeline.ctx, pipeline.canvas.width, pipeline.canvas.height, pipeline.video);
       pipeline.frames++;
     } catch (error) {
       // A single bad frame (e.g. mid-resize) must never kill the camera.

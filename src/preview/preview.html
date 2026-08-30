@@ -42,7 +42,13 @@
       <aside class="side">
         <section class="card block">
           <div class="block-head"><h2>Animal</h2><span class="muted" id="animalName"></span></div>
-          <div class="animal-grid" id="animalGrid"></div>
+          <div class="animal-grid" id="animalGrid" data-setting="animal"></div>
+        </section>
+
+        <section class="card block">
+          <div class="block-head"><h2>Scene</h2><span class="muted" id="backgroundName"></span></div>
+          <div class="scene-grid" id="sceneGrid" data-setting="background"></div>
+          <p class="hint" id="sceneHint">Replaces the room behind you. Costs a second model per frame, so leave it on <b>None</b> if your machine is working hard.</p>
         </section>
 
         <section class="card block">
@@ -137,6 +143,7 @@
   <script src="../core/animals.js"></script>
   <script src="../core/model-loader.js"></script>
   <script src="../core/animals3d.js"></script>
+  <script src="../core/backgrounds.js"></script>
   <script src="../core/compositor.js"></script>
   <script src="../core/detector-client.js"></script>
   <script src="preview.js"></script>

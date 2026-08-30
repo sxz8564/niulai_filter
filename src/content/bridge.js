@@ -23,9 +23,27 @@
 
   var detector = NS.createDetectorClient({
     onFace: function (face) {
-      toPage('face', { face: face });
+      pendingFace = { face: face };
+    },
+    /*
+     * The mask rides along with the pose so the page sees one message per
+     * frame, and it is transferred rather than copied — a bitmap crossing
+     * worlds by value every frame would be a needless megabyte a second.
+     */
+    onMask: function (mask) {
+      var payload = pendingFace || { face: null };
+      pendingFace = null;
+      payload.mask = mask || null;
+      window.postMessage(
+        Object.assign({ ch: CHANNEL, dir: 'ext', type: 'face' }, payload),
+        '*',
+        mask ? [mask] : []
+      );
     }
   });
+
+  // onFace always fires first and onMask right after it, for the same frame.
+  var pendingFace = null;
 
   function toPage(type, payload) {
     window.postMessage(Object.assign({ ch: CHANNEL, dir: 'ext', type: type }, payload || {}), '*');
@@ -33,9 +51,11 @@
 
   function pushSettings() {
     detector.setFps(settings.detectFps);
+    detector.setSegment(settings.enabled && settings.background !== 'none');
     toPage('settings', { settings: settings });
     updateDetectorRunState();
     ensureModelBytes(settings.animal);
+    ensureBackgroundBytes(settings.background);
   }
 
   /* ------------------------------------------------------- avatar models */
@@ -68,6 +88,41 @@
 
   var modelError = null;
 
+  /* ---------------------------------------------------------- backgrounds */
+
+  var backgroundRegistry = [];
+  var sentBackgrounds = {};
+
+  /** Same reason as the models: the page cannot read the extension's files. */
+  function ensureBackgroundBytes(id) {
+    if (!id || id === 'none') return;
+    var entry = backgroundRegistry.filter(function (e) { return e.id === id; })[0];
+    if (!entry || sentBackgrounds[entry.id]) return;
+    sentBackgrounds[entry.id] = true;
+    fetch(chrome.runtime.getURL('models/backgrounds/' + entry.file))
+      .then(function (response) {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        return response.arrayBuffer();
+      })
+      .then(function (buffer) {
+        window.postMessage(
+          { ch: CHANNEL, dir: 'ext', type: 'backgroundData', id: entry.id, buffer: buffer },
+          '*', [buffer]);
+      })
+      .catch(function () { sentBackgrounds[entry.id] = false; });
+  }
+
+  fetch(chrome.runtime.getURL('models/backgrounds/index.json'))
+    .then(function (response) { return response.ok ? response.json() : []; })
+    .then(function (entries) {
+      backgroundRegistry = Array.isArray(entries) ? entries : [];
+      if (backgroundRegistry.length) {
+        toPage('backgrounds', { registry: backgroundRegistry });
+        ensureBackgroundBytes(settings.background);
+      }
+    })
+    .catch(function () { backgroundRegistry = []; });
+
   fetch(chrome.runtime.getURL('models/avatars/index.json'))
     .then(function (response) { return response.ok ? response.json() : []; })
     .then(function (entries) {
@@ -79,9 +134,14 @@
     })
     .catch(function () { registry = []; });
 
-  /** Detection is pure overhead when the mask is off or pinned manually. */
+  /*
+   * Detection is pure overhead when the head is off or pinned in place — but
+   * the same frames feed the segmenter, so a chosen scene keeps the pump
+   * running even when the face is not being tracked.
+   */
   function shouldDetect() {
-    return !!activePipeline && settings.enabled && !settings.manual;
+    if (!activePipeline || !settings.enabled) return false;
+    return !settings.manual || settings.background !== 'none';
   }
 
   function updateDetectorRunState() {
@@ -104,6 +164,7 @@
     if (msg.type === 'hello') {
       pushSettings();
       if (registry.length) toPage('models', { registry: registry });
+      if (backgroundRegistry.length) toPage('backgrounds', { registry: backgroundRegistry });
       return;
     }
 

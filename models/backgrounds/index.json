@@ -1,0 +1,7 @@
+[
+  { "id": "orchard-day",   "name": "Orchard Day",   "file": "orchard-day.webp" },
+  { "id": "lantern-night", "name": "Lantern Night", "file": "lantern-night.webp" },
+  { "id": "pale-plain",    "name": "Pale Plain",    "file": "pale-plain.webp" },
+  { "id": "star-valley",   "name": "Star Valley",   "file": "star-valley.webp" },
+  { "id": "golden-grove",  "name": "Golden Grove",  "file": "golden-grove.webp" }
+]

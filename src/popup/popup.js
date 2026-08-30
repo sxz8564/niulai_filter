@@ -80,6 +80,12 @@
     $('animalName').textContent = NS.animals.get(settings.animal).name;
     paintThumb($('brand'), settings.animal);
 
+    var scene = NS.backgrounds.get(settings.background);
+    $('backgroundName').textContent = scene ? scene.name : 'None';
+    Array.prototype.forEach.call(document.querySelectorAll('.scene'), function (node) {
+      node.setAttribute('aria-pressed', String(node.dataset.background === settings.background));
+    });
+
     // Depth is a 3D notion; the flat-art fallback has no axis to move along.
     var flat = !settings.render3d;
     $('offsetZ').disabled = flat;
@@ -178,6 +184,58 @@
     });
   }
 
+  /* --------------------------------------------------------- backgrounds */
+
+  function sceneUrl(file) { return chrome.runtime.getURL('models/backgrounds/' + file); }
+
+  function buildScenes() {
+    var grid = $('sceneGrid');
+    grid.textContent = '';
+    var tiles = [{ id: 'none', name: 'None', file: null }].concat(NS.backgrounds.list());
+    tiles.forEach(function (entry) {
+      var button = document.createElement('button');
+      button.className = 'scene';
+      button.type = 'button';
+      button.setAttribute('aria-pressed', 'false');
+      button.dataset.background = entry.id;
+      button.title = entry.name;
+
+      var swatch = document.createElement('span');
+      swatch.className = 'swatch' + (entry.file ? '' : ' empty');
+      if (entry.file) swatch.style.backgroundImage = 'url("' + sceneUrl(entry.file) + '")';
+      else swatch.textContent = '\u2014';
+
+      var label = document.createElement('span');
+      label.textContent = entry.name;
+      button.appendChild(swatch);
+      button.appendChild(label);
+      grid.appendChild(button);
+
+      button.addEventListener('click', function () {
+        settings.background = entry.id;
+        reflect();
+        save();
+      });
+    });
+  }
+
+  /*
+   * The popup only shows the scenes; the compositor that paints them lives in
+   * the meeting tab, so no bytes are needed here beyond the swatches, which
+   * the browser fetches itself.
+   */
+  function loadScenes() {
+    return fetch(chrome.runtime.getURL('models/backgrounds/index.json'))
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (entries) {
+        if (!Array.isArray(entries) || !entries.length) return;
+        NS.backgrounds.registerAll(entries);
+        buildScenes();
+        reflect();
+      })
+      .catch(function () { /* no scenes is fine */ });
+  }
+
   /** Bundled models appear in the picker alongside the built-in animals. */
   function loadRegistry() {
     return fetch(chrome.runtime.getURL('models/avatars/index.json'))
@@ -206,10 +264,12 @@
   NS.store.load().then(function (loaded) {
     settings = loaded;
     buildGrid();
+    buildScenes();
     bind();
     reflect();
     refreshStatus();
     setInterval(refreshStatus, 1200);
     loadRegistry();
+    loadScenes();
   });
 })();

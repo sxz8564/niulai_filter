@@ -120,6 +120,51 @@ button.primary:hover { filter: brightness(1.06); }
 }
 .animal[aria-pressed="true"] span { color: var(--text); font-weight: 600; }
 
+/* Scene picker: the same tiles, wider, because a landscape needs the room. */
+.scene-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.scene {
+  border: 1px solid transparent;
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 4px 3px 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.scene .swatch {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--surface);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+/* "None" has no picture, so it says so instead. */
+.scene .swatch.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: var(--muted);
+}
+.scene span { font-size: 10.5px; color: var(--muted); text-align: center; }
+.scene:hover { background: var(--accent-soft); }
+.scene[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.scene[aria-pressed="true"] span { color: var(--text); font-weight: 600; }
+
 /* Sliders and rows */
 .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .row + .row { margin-top: 9px; }

@@ -197,6 +197,87 @@ check('a lost WebGL context does not empty the picker',
   `${(recovered.before * 100).toFixed(0)}% before, ${(recovered.after * 100).toFixed(0)}% after`);
 
 /*
+ * Backgrounds. The segmenter's own judgement cannot be exercised here — the
+ * fake camera is a colour pattern, and the model calls the whole of it a
+ * person — so these check everything around it: that the scenes load, that
+ * the compositing puts the scene exactly where the mask says the room is, and
+ * that none of it runs when no scene is chosen.
+ */
+const scenes = await preview.evaluate(() => {
+  const NS = globalThis.__CritterCam;
+  const list = NS.backgrounds.list();
+  return {
+    tiles: document.querySelectorAll('.scene').length,
+    decoded: list.filter((e) => NS.backgrounds.ready(e.id)).length,
+    total: list.length
+  };
+});
+check('scenes load and decode', scenes.total > 0 && scenes.decoded === scenes.total &&
+  scenes.tiles === scenes.total + 1,
+  `${scenes.decoded}/${scenes.total} decoded, ${scenes.tiles} tiles including None`);
+
+/*
+ * A mask made here rather than by the model: opaque on the left, clear on the
+ * right. The left half of the output should then still be the camera and the
+ * right half the scene. Anything else means the composite is wrong, whatever
+ * the segmenter thinks.
+ */
+const composed = await preview.evaluate(async () => {
+  const NS = globalThis.__CritterCam;
+  const first = NS.backgrounds.list()[0];
+  document.querySelector(`[data-background="${first.id}"]`).click();
+  await new Promise((r) => setTimeout(r, 400));
+
+  // Stop the pump and let any result already in flight land, or its mask —
+  // which on a fake camera says the whole frame is a person — replaces ours
+  // and the scene never gets a chance to show.
+  NS.previewDetector.detach();
+  await new Promise((r) => setTimeout(r, 900));
+
+  const m = document.createElement('canvas');
+  m.width = 320; m.height = 180;
+  const mg = m.getContext('2d');
+  mg.clearRect(0, 0, 320, 180);
+  mg.fillStyle = '#fff';
+  mg.fillRect(0, 0, 160, 180);
+  NS.previewCompositor.setMask(await createImageBitmap(m));
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  const out = document.getElementById('output');
+  const ctx = out.getContext('2d');
+  const sample = (fx) => {
+    const d = ctx.getImageData(Math.round(out.width * fx), Math.round(out.height * 0.5), 1, 1).data;
+    return { r: d[0], g: d[1], b: d[2] };
+  };
+  const camera = sample(0.25);
+  const scene = sample(0.75);
+  const isFakeCamera = (p) => p.g > 90 && p.g > p.r * 1.6 && p.g > p.b * 1.6;
+  return { id: first.id, camera, scene, keptCamera: isFakeCamera(camera), replacedRoom: !isFakeCamera(scene) };
+});
+check('a scene replaces the room and leaves you alone',
+  composed.keptCamera && composed.replacedRoom,
+  `${composed.id}: masked-in rgb(${composed.camera.r},${composed.camera.g},${composed.camera.b}), ` +
+  `masked-out rgb(${composed.scene.r},${composed.scene.g},${composed.scene.b})`);
+
+// Segmentation is a second model per frame. Nobody should pay for it while
+// their background is set to None.
+const idle = await preview.evaluate(async () => {
+  const NS = globalThis.__CritterCam;
+  document.querySelector('[data-background="none"]').click();
+  NS.previewCompositor.setMask(null);
+  let masks = 0;
+  NS.previewDetector.detach();
+  NS.previewDetector.attach(document.getElementById('camera'));
+  const seen = [];
+  const original = NS.previewCompositor.setMask;
+  NS.previewCompositor.setMask = function (bitmap) { if (bitmap) masks++; return original.call(this, bitmap); };
+  await new Promise((r) => setTimeout(r, 3000));
+  NS.previewCompositor.setMask = original;
+  return { masks };
+});
+check('no scene means no segmentation', idle.masks === 0, `${idle.masks} masks while set to None`);
+
+/*
  * The popup and the preview edit the same stored settings, so a setting that
  * reaches only one of them is a setting half the users cannot change. This is
  * how the forward/back slider arrived: added to one view, missing from the
@@ -208,8 +289,9 @@ const describeControls = () => {
   for (const key of Object.keys(NS.DEFAULTS)) {
     const el = document.getElementById(key);
     if (!el) {
-      // The animal is chosen from a grid of thumbnails, not a named input.
-      rows[key] = key === 'animal' && document.getElementById('animalGrid') ? 'grid' : 'missing';
+      // Some settings are chosen from a grid of tiles, not a named input.
+      const grid = document.querySelector(`[data-setting="${key}"]`);
+      rows[key] = grid ? `grid of ${grid.children.length}` : 'missing';
       continue;
     }
     rows[key] = el.type === 'range' ? `range ${el.min}..${el.max}/${el.step}`
@@ -274,6 +356,7 @@ check('expression params reach the model', driven.open === 1 && driven.shut === 
 const meet = await context.newPage();
 const meetErrors = [];
 meet.on('pageerror', (e) => meetErrors.push(e.message));
+meet.on('console', (m) => { if (m.text().includes('CRITTER')) console.log('  [meet]', m.text()); });
 await meet.route('https://meet.google.com/**', (route) => route.fulfill({
   status: 200,
   contentType: 'text/html',
@@ -390,6 +473,45 @@ for (let i = 0; i < 40; i++) {
 }
 check('face detector runs on a host page', hostDetector.state === 'ready' && hostDetector.processed > 0,
   hostDetector.error || `${hostDetector.state}, ${hostDetector.processed} frames on ${hostDetector.delegate}`);
+
+/*
+ * The bridge path for scenes, which nothing else covers: a host page cannot
+ * read chrome-extension:// URLs of its own, so the content script fetches the
+ * registry and the image and hands the bytes across, and every mask has to
+ * cross the same boundary as a transferable rather than a copy.
+ */
+await preview.evaluate(() => chrome.storage.sync.set({
+  settings: { enabled: true, manual: true, animal: 'niulai', size: 1.9, background: 'orchard-day' }
+}));
+await meet.evaluate(() => {
+  window.__masks = { results: 0, withMask: 0, size: null };
+  window.addEventListener('message', (event) => {
+    const m = event.data;
+    if (!m || m.dir !== 'ext' || m.type !== 'face') return;
+    window.__masks.results++;
+    if (m.mask) {
+      window.__masks.withMask++;
+      window.__masks.size = m.mask.width + 'x' + m.mask.height;
+    }
+  });
+});
+let crossed = { ready: false, masks: { results: 0, withMask: 0, size: null } };
+// Building the segmenter means loading a model and compiling shaders, which
+// software GL does in seconds rather than milliseconds.
+for (let i = 0; i < 140; i++) {
+  await meet.waitForTimeout(500);
+  if (i % 20 === 19) console.log(`      … ${((i + 1) / 2).toFixed(0)}s: ${crossed.masks.withMask}/${crossed.masks.results} masked`);
+  crossed = await meet.evaluate(() => ({
+    ready: !!(globalThis.__CritterCam.backgrounds &&
+      globalThis.__CritterCam.backgrounds.ready('orchard-day')),
+    masks: window.__masks
+  }));
+  if (crossed.ready && crossed.masks.withMask >= 3) break;
+}
+check('a scene crosses into the host page', crossed.ready,
+  crossed.ready ? 'orchard-day decoded in the page' : 'never decoded');
+check('masks reach the host page with the pose', crossed.masks.withMask >= 3,
+  `${crossed.masks.withMask} of ${crossed.masks.results} results carried a ${crossed.masks.size} mask`);
 await meet.locator('#v').screenshot({ path: join(outDir, 'meet-output.png') });
 
 console.log(`\nscreenshots in ${outDir}`);

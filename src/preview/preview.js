@@ -8,10 +8,12 @@
   var settings = NS.normalizeSettings({});
   var compositor = NS.createCompositor();
   var detector = NS.createDetectorClient({
-    onFace: function (face) { compositor.onFace(face); }
+    onFace: function (face) { compositor.onFace(face); },
+    onMask: function (mask) { compositor.setMask(mask); }
   });
   // Handy from the console, and used by tools/smoke-test.mjs.
   NS.previewDetector = detector;
+  NS.previewCompositor = compositor;
 
   var video = $('camera');
   var canvas = $('output');
@@ -85,6 +87,12 @@
     $('animalName').textContent = NS.animals.get(settings.animal).name;
     paintThumb($('brand'), settings.animal, 52);
 
+    var scene = NS.backgrounds.get(settings.background);
+    $('backgroundName').textContent = scene ? scene.name : 'None';
+    Array.prototype.forEach.call(document.querySelectorAll('.scene'), function (node) {
+      node.setAttribute('aria-pressed', String(node.dataset.background === settings.background));
+    });
+
     // Depth is a 3D notion; the flat-art fallback has no axis to move along.
     var flat = !settings.render3d;
     $('offsetZ').disabled = flat;
@@ -93,6 +101,8 @@
 
     compositor.setSettings(settings);
     detector.setFps(settings.detectFps);
+    // Segmentation is a second model per frame: only run it for a real scene.
+    detector.setSegment(settings.enabled && settings.background !== 'none');
     updateDetectorRunState();
   }
 
@@ -102,8 +112,66 @@
   }
 
   function updateDetectorRunState() {
-    if (running && settings.enabled && !settings.manual) detector.attach(video);
+    // Pinning the head stops face tracking, but the segmenter reads the same
+    // frames, so a chosen scene still needs the pump.
+    var wanted = running && settings.enabled &&
+      (!settings.manual || settings.background !== 'none');
+    if (wanted) detector.attach(video);
     else detector.detach();
+  }
+
+  /* --------------------------------------------------------- backgrounds */
+
+  var SCENE_DIR = '../../models/backgrounds/';
+
+  function buildScenes() {
+    var grid = $('sceneGrid');
+    grid.textContent = '';
+    var tiles = [{ id: 'none', name: 'None', file: null }].concat(NS.backgrounds.list());
+    tiles.forEach(function (entry) {
+      var button = document.createElement('button');
+      button.className = 'scene';
+      button.type = 'button';
+      button.dataset.background = entry.id;
+      button.title = entry.name;
+      var swatch = document.createElement('span');
+      swatch.className = 'swatch' + (entry.file ? '' : ' empty');
+      if (entry.file) swatch.style.backgroundImage = 'url("' + SCENE_DIR + entry.file + '")';
+      else swatch.textContent = '\u2014';
+      var label = document.createElement('span');
+      label.textContent = entry.name;
+      button.appendChild(swatch);
+      button.appendChild(label);
+      grid.appendChild(button);
+      button.addEventListener('click', function () {
+        settings.background = entry.id;
+        apply();
+        save();
+      });
+    });
+  }
+
+  /*
+   * The scene has to be decoded before the compositor can paint it, and the
+   * bytes are only read once. Reading them all up front means switching is
+   * instant, and 700 KB of local files is not worth deferring.
+   */
+  function loadScenes() {
+    return fetch(SCENE_DIR + 'index.json')
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (entries) {
+        if (!Array.isArray(entries) || !entries.length) return;
+        NS.backgrounds.registerAll(entries);
+        buildScenes();
+        apply();
+        entries.forEach(function (entry) {
+          fetch(SCENE_DIR + entry.file)
+            .then(function (r) { return r.arrayBuffer(); })
+            .then(function (buf) { return NS.backgrounds.provide(entry.id, buf); })
+            .catch(function () { /* the tile stays, the scene just will not paint */ });
+        });
+      })
+      .catch(function () { /* no scenes is fine */ });
   }
 
   /* -------------------------------------------------------- avatar models */
@@ -244,8 +312,7 @@
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
         }
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        compositor.drawFrame(ctx, canvas.width, canvas.height);
+        compositor.drawFrame(ctx, canvas.width, canvas.height, video);
       }
     } catch (error) { /* skip a bad frame */ }
     reportStatus();
@@ -335,9 +402,11 @@
   NS.store.load().then(function (loaded) {
     settings = loaded;
     buildGrid();
+    buildScenes();
     bind();
     apply();
     loadRegistry();
+    loadScenes();
   });
 
   // Keep in step with edits made from the popup while this tab is open.
