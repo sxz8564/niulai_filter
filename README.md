@@ -1,5 +1,7 @@
 # Critter Cam
 
+**English** · [简体中文](README.zh-CN.md)
+
 A Chrome extension that replaces your head with an animated animal, live in
 your webcam feed — so Google Meet (and anything else in the browser) sends the
 animal out to everyone on the call.
@@ -175,7 +177,7 @@ src/page/patch.js          MAIN world — swaps in a canvas stream
 filtered MediaStream → the meeting
 ```
 
-Three details are load-bearing:
+Four details are load-bearing:
 
 - **The patch runs in the page's MAIN world** at `document_start`, because it
   has to replace `getUserMedia` before the meeting app captures a reference to
@@ -251,18 +253,25 @@ found, and fails on anything that would stop the model loading. A conforming
 example is committed at `docs/reference/example-head.glb`
 (`npm run example:avatar` regenerates it).
 
-### Adding an animal
+### Adding a character
 
-Animals in `src/core/animals.js` are data, not drawing code. Copy an entry in
-`SPECS` and change the palette and the ear/eye/muzzle numbers. The picker, the
-preview and the icons all pick it up automatically.
+Every character is a glTF model. Put the `.glb` in `models/avatars/`, add an
+entry to `models/avatars/index.json`, and the picker, the preview and the
+thumbnails all pick it up:
 
-Each spec drives two renderers. `src/core/animals3d.js` builds a lit 3D head
-from the same numbers, so a new animal gets a 3D model for free; add a
-`model3d` block to override the derived proportions and a `build3d` function
-for parts the generic builder has no concept of. The flat vector art in
-`animals.js` stays as the fallback for machines without WebGL, where a
-`markings` function adds anything distinctive.
+```json
+{ "id": "niulai", "name": "Niulai", "file": "niulai.glb",
+  "scale": 1.676, "offset": [0, -0.44, 0], "rotation": [0, 0, 0], "tint": "#e0762a" }
+```
+
+`scale` and `offset` place the head inside whatever you cropped — a bust needs
+them, a head-only model usually does not, because the loader measures and
+centres what it is given. See [docs/AVATAR-MODELS.md](docs/AVATAR-MODELS.md).
+
+The procedurally drawn animals this started with are gone; `SPECS` in
+`src/core/animals.js` is empty. What that file still holds is the flat vector
+renderer, which draws a neutral head when WebGL is unavailable and in the
+moment before a model's bytes arrive.
 
 The Three.js bundle in `vendor/three/` is built from `tools/three-entry/` with
 `npm run build:three`; only the classes the renderer uses are pulled in.
