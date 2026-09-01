@@ -1,0 +1,59 @@
+{
+  "generated": "2026-09-01T04:22:25.029Z",
+  "characters": [
+    {
+      "id": "niulai",
+      "name": "Niulai",
+      "nameChinese": "牛来",
+      "file": "models/avatars/niulai.glb",
+      "sha256": "6518649890da8cdf5412f1a1f5f0f44370fe8985e764d06631d90bcc4558971c",
+      "firstCommitted": "2026-08-29T04:11:49+00:00",
+      "sheet": "docs/ip/niulai.png"
+    },
+    {
+      "id": "baola",
+      "name": "Baola",
+      "nameChinese": "豹拉",
+      "file": "models/avatars/baola.glb",
+      "sha256": "ed49c1220dcff47e36565a044cf33f94eb49b4b4a929b85fced0e1f1436d4e4e",
+      "firstCommitted": "2026-08-29T18:15:17+00:00",
+      "sheet": "docs/ip/baola.png"
+    },
+    {
+      "id": "wolfwolf",
+      "name": "Wolfwolf",
+      "nameChinese": "狼狼",
+      "file": "models/avatars/wolfwolf.glb",
+      "sha256": "465d85400e9eff964775787f8d8b772c939a77db306e202b30fa94f7df1488a4",
+      "firstCommitted": "2026-08-29T18:22:22+00:00",
+      "sheet": "docs/ip/wolfwolf.png"
+    },
+    {
+      "id": "niumama",
+      "name": "NiuMama",
+      "nameChinese": "牛妈妈",
+      "file": "models/avatars/niumama.glb",
+      "sha256": "d1d100a89ded7114ac2a7f76c10f54f6938e1bfdcd8bd8c837c4b1b5477c569c",
+      "firstCommitted": "2026-08-29T19:25:37+00:00",
+      "sheet": "docs/ip/niumama.png"
+    },
+    {
+      "id": "niubaba",
+      "name": "NiuBaba",
+      "nameChinese": "牛爸爸",
+      "file": "models/avatars/niubaba.glb",
+      "sha256": "b1eac9ff66ed82cfee6b68f1d95881835f668eca9cccda4c4fbb26f0aa35afc1",
+      "firstCommitted": "2026-08-29T19:39:43+00:00",
+      "sheet": "docs/ip/niubaba.png"
+    },
+    {
+      "id": "xiaoniao",
+      "name": "XiaoNiao",
+      "nameChinese": "小鸟",
+      "file": "models/avatars/xiaoniao.glb",
+      "sha256": "1182708b586157e4fd439b06b32f6b4d15d52a2c017740654ee0eb52b6ac3c02",
+      "firstCommitted": "2026-08-29T19:46:56+00:00",
+      "sheet": "docs/ip/xiaoniao.png"
+    }
+  ]
+}
