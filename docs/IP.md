@@ -1,151 +1,154 @@
-# Not getting locked out of your own characters
+# US registration: not getting locked out of your own characters
 
-The goal here is defensive: never end up unable to use 牛来, 豹拉 or Critter Cam
-because somebody else registered them first. Not licensing, not selling rights,
-not stopping fans. That narrows what is worth doing considerably.
+The goal is defensive — never end up unable to use the characters or the name
+because someone else got there first. Registration is in the United States.
 
-Preparation notes, not legal advice.
+Preparation notes, not legal advice. The one item at the top needs a real
+trademark attorney before you spend money on anything else.
 
-## The short version
+## The problem is the opposite of the one you were worried about
 
-One of the three things people worry about is a real risk. The other two mostly
-are not.
+**CRITTERCAM is a live US trademark, registered in International Class 9, owned
+by the National Geographic Society.**
 
-| Worry | Real? | What to do |
-| --- | --- | --- |
-| Someone registers **the names** as a trademark in China and blocks you | **Yes. This is the one.** First to file wins, squatting is routine, and undoing it costs far more than filing | Register the names you actually use, in the classes you actually operate |
-| Someone registers **the character pictures** as their trademark | Possible | Your earlier copyright beats it — but only if you can prove it cheaply. A 版权登记 certificate is what makes that cheap |
-| Someone registers **copyright** in your characters and takes them from you | Largely not | Copyright is yours from the moment you made them. A stranger's filing does not transfer it, and your dated evidence wins |
+- Reg. 3147049 (filed 1999, registered 2006, renewed) — Class 9, for an
+  integrated video camcorder and imaging system for affixation to animals.
+- Reg. 2354895 — services around animal-behaviour research using those systems.
 
-## Why the copyright worry is smaller than it feels
+Class 9 is exactly where downloadable software is registered, and the goods are
+cameras. "Critter Cam" against "CRITTERCAM" is a space. That means two things,
+and the second is the one that matters for a defensive goal:
 
-Copyright exists from creation, automatically, in every Berne country. There is
-no queue to win. Someone who files a registration over your character has not
-acquired anything — Chinese 作品登记 is a filing, not an examination, so a
-registration certificate is evidence, not proof, and it loses to better evidence.
+1. **A US application would probably be refused** under §2(d), likelihood of
+   confusion, with that registration cited against it.
+2. **You are the later user of an established mark, not the target of a
+   squatter.** National Geographic has used the name since the late 1980s and
+   is an active enforcer. The realistic risk to your ability to keep working is
+   a cease-and-desist about the product name — not someone stealing 牛来.
 
-Better evidence is what you already have, and more of it than most people ever
-assemble:
+This is worth an attorney's opinion before anything else, because the answer
+determines whether you are registering a name or changing one. Arguments exist
+on your side — different goods, different buyers, no one shopping for a browser
+extension thinks they are getting a whale-mounted camera — but they are
+arguments, and they cost money to make.
 
-- Every character's first appearance is a **dated commit**, and the whole
-  process is in the history — rigging, re-rigging, a beak that had to stop
-  hinging like a mammal jaw. That is very hard to fabricate after the fact.
-- The **Chrome Web Store listing** is a public, dated, third-party record of
-  first use.
-- `docs/ip/` holds a five-view sheet per character, each printed with the
-  **SHA-256** of the model it was rendered from and that file's first commit
-  date, so a sheet cannot drift from the file it claims to depict.
+Two practical notes. The 2006 registration's ten-year renewal window falls
+around now, so an attorney should pull the current status from TSDR rather than
+trusting a 2016 snapshot. And if a rename is on the table, doing it **before**
+building more brand equity is far cheaper than after — the extension is new,
+the store listing is young, and nothing is lost yet but a name.
 
-So registering copyright is worth doing, but not because you would otherwise
-lose the right. It is worth doing because it converts an argument into a
-document, and because of the trademark point below.
+The character names look clearer. A knock-out search found **BAOLA** registered
+(Reg. 5995999, 2020) for kitchen and household goods, which is a different class
+and unrelated goods, and a pending **NIULAA** in a different spelling. Neither
+looks like an obstacle in Class 9. This is a preliminary search, not clearance.
 
-## Why the trademark worry is real
+## The US does not work the way you feared
 
-China is **first to file**. Whoever registers a mark owns it, regardless of who
-invented it. There is a whole industry registering names spotted in app stores
-and then selling them back. If someone registers 牛来 in class 9 before you do,
-they can demand you stop using it on your own software.
+China is first to file, which is what makes squatting there so effective. **The
+US is first to use.** Trademark rights arise from actual use in commerce, and a
+later filer does not simply take them from an earlier user. You have been using
+these names publicly, with dated evidence, since August 2026.
 
-There is a narrow prior-use defence — Chinese Trademark Law article 59(3) lets
-you carry on using a mark you used to some influence before their filing — but
-it is a *defence*, not ownership. It keeps you where you are, at the scale you
-were already at, and lets them keep the registration. It is worth much less
-than having filed.
+So the nightmare — a stranger registers 牛来 and forbids you from using it — is
+much harder to pull off here. What registration adds is worth having:
+nationwide rights instead of rights limited to where you actually trade, a
+presumption of validity, and the ability to sue in federal court. But it is an
+upgrade, not a rescue.
 
-**A public Chinese-language store listing is exactly what squatters watch.**
-Filing before you push the Chinese listing widely is the single highest-value
-thing on this page.
+Copyright is the same story, more so. It exists from the moment you create the
+work, and no one else's filing takes it from you.
 
-## Correcting something I said earlier
+## Do this first: register the copyright, and do it before late November
 
-I previously flagged the MIT licence covering the artwork as the first thing to
-fix. For your goal, that was wrong-footed. MIT lets other people copy the
-characters; it does not take away your right to use them, which is what you
-actually care about. It also does not hand anyone a trademark.
+This is cheap, needs no attorney, and there is a deadline you are currently
+inside.
 
-If it ever bothers you that a copycat app could ship your characters lawfully,
-the fix is a carve-out — code MIT, artwork and names reserved — and I can write
-it in a few minutes. But it is a preference, not a defence, and nothing on this
-page waits for it.
+Two provisions decide the timing:
 
-One genuinely useful side effect of publishing under MIT on a public dated
-repository: it is **defensive publication**. It makes your authorship and its
-date matter-of-public-record, which is helpful ammunition against anyone
-claiming they got there first.
+- **17 U.S.C. §411(a)** — you cannot file an infringement suit over a US work
+  until it is registered. Not a deadline, but it means an unregistered work is
+  one you cannot enforce quickly.
+- **17 U.S.C. §412** — statutory damages and attorney's fees are unavailable
+  for infringement that began before registration, **unless registration
+  happens within three months of first publication.**
 
-## What to actually do
+That second one is a window, and yours is open. The characters were first
+published around **29–30 August 2026**, so the three-month window closes at the
+**end of November 2026**. Register inside it and you are covered for
+infringements that occur in the meantime; miss it and you can still register,
+but you lose statutory damages and fees for anything that started first. Since
+statutory damages are often the only thing that makes a small-scale
+infringement worth pursuing at all, this is the difference between a right you
+can enforce and one you can only assert.
 
-Ordered by how much protection each buys per unit of money and time.
+- Where: eCO at copyright.gov.
+- Cost: on the order of $45–65 per application; check the current schedule.
+- What to file: the six character designs as visual art. Works first published
+  together in the same release can go on one application as a **unit of
+  publication**, which is the cheap route — confirm your facts fit it.
+- Work sample: the sheets in `docs/ip/`. Each carries the source filename, the
+  SHA-256 of the model it was rendered from, and that file's first commit date.
 
-### 1. Timestamp the repository — cheap, do it now
-
-A Git timestamp is only as trustworthy as whoever can rewrite it. Putting the
-current tree through a timestamping service fixes the date to something you do
-not control. In China the 联合信任时间戳 service (tsa.cn) is the one courts
-routinely accept. Small money, no lawyer, strongest evidence-per-yuan on this
-page.
-
-### 2. Register the trademarks you would actually be hurt by losing
-
-Not all six names. Defensive means covering what would stop you working:
-
-- **Critter Cam** — the product name. Classes **9** (downloadable software) and
-  **42** (software as a service). This is the one that matters most; it is what
-  the store listing, the icon and the domain all point at.
-- **牛来** and **豹拉** — coined and distinctive, so they will register, and
-  they are the two most likely to be picked up by someone else.
-- **牛妈妈**, **牛爸爸**, **小鸟** — these mean "cow mother", "cow father" and
-  "little bird". An examiner may refuse them as descriptive, and for the same
-  reason nobody else can easily monopolise them against you. Low risk, low
-  priority. If you want them covered, file them as **figurative marks**, the
-  artwork together with the name.
-
-Search first at sbj.cnipa.gov.cn. As a foreign applicant you will generally
-need an agent; the thing they earn their fee on is choosing subclasses
-(类似商品和服务区分表), because Chinese protection is effectively per subclass.
-
-Official fees are modest — a few hundred yuan per class for an electronic
-filing — and agent fees are the larger part. Check current rates.
-
-### 3. Register the character designs as 美术作品
-
-Through the Copyright Protection Centre (ccopyright.com.cn). Two defensive
-reasons, both concrete:
-
-- **It is the counter to a figurative trademark squat.** Prior copyright is a
-  prior right under article 32 of the Trademark Law, so a design certificate
-  dated before their filing is the instrument for opposing or invalidating a
-  mark someone builds out of your character.
-- **Platforms want a document.** Store and marketplace takedown processes are
-  built around certificates, not narratives.
-
-The sheets in `docs/ip/` are made to be the work sample. Attach the `.glb`
-where the office accepts a file.
-
-### 4. United States, only if you care about US enforcement
-
-Registration at copyright.gov is required before you can sue over a US work,
-and statutory damages need registration before the infringement. Disclaim the
-machine-generated portions and claim the human contribution — see below.
-
-## One thing to check before filing anything
+## The AI disclosure, which you must get right
 
 `THIRD_PARTY_NOTICES.md` records that the meshes were generated with Meshy AI
-from your designs, then cropped, retextured and rigged by the tools here. Two
-questions follow, and both are worth answering before you pay a fee:
+from your designs, then cropped, retextured and rigged by the tools here. The
+Copyright Office requires that machine-generated material be **disclaimed**,
+and registers only the human contribution. An application that quietly claims
+the whole thing risks being refused, or worse, cancelled later for a
+misstatement — which would be a self-inflicted version of exactly the outcome
+you are trying to avoid.
 
-- **Did the generator's terms pass ownership to you?** Check the plan that
-  produced each model. If output ownership did not transfer, a registration in
-  your name is built on sand.
-- **How much of the result is human work?** The US Copyright Office requires
-  AI-generated portions to be disclaimed and protects only the human
-  contribution. Chinese courts have been more willing to find copyright in
-  AI-assisted images where the human input was substantial.
+So claim what is actually yours, explicitly:
 
-Your answer to the second is stronger than most: an original design came first,
-and the rigging, retexturing and expression work is recorded commit by commit.
-Keep that history. It is the evidence that the human contribution was real.
+- The **original character designs** that went in as input.
+- The **selection, modification and arrangement** of the output: cropping,
+  retexturing, and the rigging that gives each character its expressions.
+- The **morph-target work** — a jaw that opens onto a modelled interior, a beak
+  that hinges at the beak rather than at an invented mammal jaw, eyes that
+  blink one at a time.
+
+Then disclaim the machine-generated mesh itself.
+
+Two things support this better than most applicants can manage. First, check
+whether the Meshy plan you used passes output ownership to you — if it does not,
+say so and adjust the claim. Second, the commit history records the human work
+step by step, including the rigs that were wrong and had to be redone. That is
+unusually good evidence that a person did something.
+
+## Then the trademark, once the name question is settled
+
+Assuming you keep or change the name, the filing looks like this:
+
+- **Class 9** for the downloadable extension. **Class 42** if you offer a hosted
+  service later; the extension alone is Class 9.
+- **Basis §1(a), use in commerce** — the Chrome Web Store listing is a plausible
+  specimen, provided the screenshot shows the mark *and* the download point on
+  the same page.
+- **Fees**: base $350 per class since the January 2025 restructuring, plus $200
+  per class if you write your own description instead of picking from the ID
+  Manual, plus other surcharges. Use the ID Manual.
+- **If you are not domiciled in the United States**, a US-licensed attorney is
+  mandatory, not optional.
+
+For the character names: file the distinctive ones. 牛妈妈, 牛爸爸 and 小鸟 mean
+"cow mother", "cow father" and "little bird" — descriptive in translation, which
+cuts both ways: harder for you to register, and equally hard for anyone else to
+monopolise against you. Low risk, low priority.
+
+## Evidence you already have
+
+- **Dated authorship.** Each character's first appearance is a timestamped
+  commit, and the design process is in the history.
+- **File identity.** Every sheet in `docs/ip/` carries the SHA-256 of the model
+  it depicts, so a picture cannot drift from the file it claims to show.
+- **Publication.** The Chrome Web Store listing is a third-party dated record
+  of first use.
+
+One weakness: a Git timestamp is only as good as the person who can rewrite it.
+A timestamping service fixes the dates to something outside your control, and
+costs very little.
 
 ## Inventory
 
@@ -161,5 +164,14 @@ Keep that history. It is the evidence that the human contribution was real.
 | NiuBaba | 牛爸爸 | `docs/ip/niubaba.png` |
 | XiaoNiao | 小鸟 | `docs/ip/xiaoniao.png` |
 
-Scene paintings are separate works and can be registered as a batch; they are
-in `models/backgrounds/`.
+Scene paintings are separate works, in `models/backgrounds/`.
+
+## Order of work
+
+1. Get an attorney's read on Critter Cam against National Geographic's
+   CRITTERCAM in Class 9. Everything about the name waits on this.
+2. Register the six character designs with the Copyright Office, with the AI
+   disclaimer, **before the end of November 2026**.
+3. Timestamp the repository.
+4. Confirm the Meshy terms passed output ownership to you.
+5. File the trademark — under whatever name survives step 1.
