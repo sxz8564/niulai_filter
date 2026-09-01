@@ -150,6 +150,13 @@ One weakness: a Git timestamp is only as good as the person who can rewrite it.
 A timestamping service fixes the dates to something outside your control, and
 costs very little.
 
+## Filing the character names
+
+A worksheet for NIULAI, BAOLA, 牛来 and 豹拉 — the fields TEAS asks for, the
+transliteration and translation rules for the Chinese marks, and the
+failure-to-function objection to expect — is in
+[IP-US-TRADEMARKS.md](IP-US-TRADEMARKS.md).
+
 ## Inventory
 
 `node tools/make-character-sheets.mjs` regenerates the sheets and
