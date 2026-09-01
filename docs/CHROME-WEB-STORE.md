@@ -99,6 +99,12 @@ that exact line got the first submission rejected. Chrome already shows the
 site list at install, and the permission justification below is the right place
 to enumerate them, because that field is asking which sites and why.
 
+## Other languages
+
+Simplified Chinese copy for the same fields is in
+[CHROME-WEB-STORE.zh-CN.md](CHROME-WEB-STORE.zh-CN.md). The dashboard takes a
+separate listing per language; the package is not involved.
+
 ## Graphics
 
 Every file below is produced by `npm run store:promo` (and `store:shots`) into
