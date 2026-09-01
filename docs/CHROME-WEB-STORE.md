@@ -21,7 +21,7 @@ that matches nothing, or a dev-only file that crept into a shipped directory.
 Verify the zip itself, not the repository, before uploading it:
 
 ```bash
-unzip -q dist/critter-cam-1.0.0.zip -d /tmp/storebuild
+unzip -q dist/critter-cam-<version>.zip -d /tmp/storebuild
 CRITTER_EXTENSION_DIR=/tmp/storebuild npm run test:smoke
 ```
 
@@ -43,10 +43,10 @@ against it. A file left out of the package fails here rather than in review.
 
 **Category:** Social & Communication · **Language:** English
 
-**Summary** (132 characters, already in the manifest):
+**Summary** (130 of 132 characters, already in the manifest):
 
-> Replaces your head with an animated animal, live in your webcam feed, so
-> everyone on your video call sees the animal, not you.
+> Replaces your head with an animated animal and your room with a painted
+> scene, live in your webcam feed, for everyone on the call.
 
 A single brand name used in a sentence is ordinary and not what the spam policy
 targets — but after a keyword-spam rejection there is no reason to keep one in
@@ -70,7 +70,8 @@ round as any other package change rather than on its own.
 >   opens onto a modelled interior when you speak.
 > • Bring your own. Drop a .glb model in and it appears in the picker.
 > • Seven painted scenes. Pick one and it replaces the camera picture entirely,
->   so all anyone sees is the animal head on the backdrop you chose.
+>   so all anyone sees is the animal head on the backdrop you chose — your room
+>   never reaches the call.
 > • Entirely offline. Face tracking runs on your machine, no frame ever leaves
 >   your computer, and the extension makes no network requests at all.
 >
@@ -140,8 +141,10 @@ because verification is a round trip through your inbox.
   Social & Communication, or Just for Fun; nothing in review turns on it.
 - **Icon** — upload `dist/store/icon-128.png`. This is separate from the icons
   inside the package; the manifest ones do not fill it in.
-- **Screenshots** — upload `dist/store/1-live-preview.png` and
-  `2-controls.png`. At least one is required.
+- **Screenshots** — upload all three from `dist/store/`, in the order
+  `2-scene.png`, `1-live-preview.png`, `3-controls.png`. At least one is
+  required, and the store shows the first one largest — which is why the scene
+  goes first while shot 1 still comes from a fake camera.
 - **Small promo tile** — `dist/store/promo-440x280.png`.
 - **Marquee promo tile** — `dist/store/promo-1400x560.png`.
 - **Detailed description** — the description under "Listing copy" above.
@@ -216,10 +219,11 @@ the user's own signed-in browsers.
       a scene replaces the camera picture outright, so nothing of the fake
       device is in shot 2, and shot 3 is the popup. Lead with shot 2 if you
       upload before retaking, since the store shows the first one largest.
-- [ ] Consider shortening the extension name. "Critter Cam — AR animal head
-      for your webcam" is 44 characters against a 45 limit, and the store
-      truncates long names in most places it shows them. "Critter Cam" with
-      the rest as the summary reads better.
+- [x] The full name stays. "Critter Cam — AR animal head for your webcam" is
+      44 characters against a 45 limit, so the store will truncate it in search
+      results, the toolbar and the extensions list — a considered trade for
+      saying what the thing is wherever it does fit. Revisit only if the
+      truncation turns out to cut somewhere unfortunate.
 - [ ] Decide whether to publish publicly or unlisted. Unlisted still goes
       through review, but the item is reachable only by link — a reasonable
       way to hand it to a few people first.

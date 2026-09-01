@@ -22,6 +22,15 @@ const out = join(root, 'dist', 'store');
 mkdirSync(out, { recursive: true });
 
 const registry = JSON.parse(readFileSync(join(root, 'models/avatars/index.json'), 'utf8'));
+/*
+ * The tiles stand on one of the product's own painted scenes rather than a
+ * flat gradient. Scenes arrived after this art was first drawn, and a tile
+ * that shows only a head now sells half the extension. Orchard Day is the pale
+ * one: it carries dark text without a heavy scrim over it.
+ */
+const scenes = JSON.parse(readFileSync(join(root, 'models/backgrounds/index.json'), 'utf8'));
+const scene = scenes.find((e) => e.id === 'orchard-day') || scenes[0];
+const sceneBase64 = readFileSync(join(root, 'models/backgrounds', scene.file)).toString('base64');
 const entry = registry.find((e) => e.id === 'niulai') || registry[0];
 // Every avatar is an imported model, so the tile art needs all of them: the
 // hero, and the rest as the row that shows this is a set.
@@ -39,7 +48,7 @@ for (const file of ['vendor/three/three.iife.js', 'src/core/animals.js', 'src/co
   await page.addScriptTag({ content: readFileSync(join(root, file), 'utf8') });
 }
 
-const images = await page.evaluate(async ({ entry, models }) => {
+const images = await page.evaluate(async ({ entry, models, sceneBase64 }) => {
   const NS = globalThis.__CritterCam;
   NS.avatarModels.registerAll(models.map((m) => m.entry));
   for (const model of models) {
@@ -50,6 +59,12 @@ const images = await page.evaluate(async ({ entry, models }) => {
     // renders below get built heads straight away.
     await NS.avatarModels.parse(bytes, model.entry);
   }
+
+  const backdrop = new Image();
+  await new Promise((resolve, reject) => {
+    backdrop.onload = resolve; backdrop.onerror = reject;
+    backdrop.src = 'data:image/webp;base64,' + sceneBase64;
+  });
 
   const renderer = NS.avatar3d.sharedRenderer();
   const FONT = '"Liberation Sans", "DejaVu Sans", system-ui, sans-serif';
@@ -71,15 +86,28 @@ const images = await page.evaluate(async ({ entry, models }) => {
   }
 
   function plate(ctx, w, h) {
-    const bg = ctx.createLinearGradient(0, 0, w, h);
-    bg.addColorStop(0, '#fdf4e6');
-    bg.addColorStop(0.55, '#f9e3c4');
-    bg.addColorStop(1, '#f2c391');
-    ctx.fillStyle = bg;
+    // Cropped to fill, never squashed: the scene is painted at 16:9 and these
+    // tiles are not.
+    const cover = Math.max(w / backdrop.width, h / backdrop.height);
+    const dw = backdrop.width * cover, dh = backdrop.height * cover;
+    ctx.drawImage(backdrop, (w - dw) / 2, (h - dh) / 2, dw, dh);
+
+    /*
+     * A veil over the half the words sit on. Text straight onto painted art is
+     * a coin toss — it survives the sky and disappears into the hedge — and a
+     * store tile has one chance to be read.
+     */
+    const veil = ctx.createLinearGradient(0, 0, w, 0);
+    veil.addColorStop(0, 'rgba(253,246,235,0.94)');
+    veil.addColorStop(0.42, 'rgba(253,246,235,0.80)');
+    veil.addColorStop(0.78, 'rgba(253,246,235,0.10)');
+    veil.addColorStop(1, 'rgba(253,246,235,0)');
+    ctx.fillStyle = veil;
     ctx.fillRect(0, 0, w, h);
+
     // A soft warm bloom behind the avatar, so the head is not floating on flat paper.
     const glow = ctx.createRadialGradient(w * 0.76, h * 0.5, 0, w * 0.76, h * 0.5, h * 0.72);
-    glow.addColorStop(0, 'rgba(255,255,255,0.55)');
+    glow.addColorStop(0, 'rgba(255,255,255,0.28)');
     glow.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, w, h);
@@ -110,9 +138,9 @@ const images = await page.evaluate(async ({ entry, models }) => {
     ctx.fillText('Critter Cam', 28, 116);
     ctx.fillStyle = MUTED;
     ctx.font = `400 15px ${FONT}`;
-    ctx.fillText('An animal head on', 28, 150);
-    ctx.fillText('your webcam — live,', 28, 172);
-    ctx.fillText('in the meeting itself.', 28, 194);
+    ctx.fillText('An animal head — and a', 28, 150);
+    ctx.fillText('painted scene — live in', 28, 172);
+    ctx.fillText('the meeting itself.', 28, 194);
     result.small = canvas.toDataURL('image/png');
   }
 
@@ -130,8 +158,8 @@ const images = await page.evaluate(async ({ entry, models }) => {
     ctx.fillText('Critter Cam', 86, 232);
     ctx.fillStyle = MUTED;
     ctx.font = `400 30px ${FONT}`;
-    ctx.fillText('An animal head on your webcam, tracked to your face —', 86, 288);
-    ctx.fillText('and everyone on the call sees it, not just you.', 86, 332);
+    ctx.fillText('An animal head tracked to your face, a painted scene behind —', 86, 288);
+    ctx.fillText('live in the call, so everyone sees it, not just you.', 86, 332);
 
     // A few of the other heads, to show this is a set rather than one avatar.
     const others = models.map((m) => m.entry.id).filter((id) => id !== entry.id).slice(0, 5);
@@ -151,7 +179,7 @@ const images = await page.evaluate(async ({ entry, models }) => {
   }
 
   return result;
-}, { entry, models });
+}, { entry, models, sceneBase64 });
 
 await browser.close();
 
