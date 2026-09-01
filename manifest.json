@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Critter Cam \u2014 AR animal head for your webcam",
   "version": "1.1.3",
-  "description": "Replaces your head with an animated animal and your room with a painted scene, live in your webcam feed, for everyone on the call.",
+  "description": "Wear an animal head on your video calls, with a painted scene instead of your room. Everyone on the call sees it, not just you.",
   "minimum_chrome_version": "116",
   "permissions": [
     "storage"

@@ -43,10 +43,12 @@ against it. A file left out of the package fails here rather than in review.
 
 **Category:** Social & Communication · **Language:** English
 
-**Summary** (130 of 132 characters, already in the manifest):
+**Summary** (127 of 132 characters, already in the manifest). This is the line
+under the title in search results, so it is end-user copy too — plain words,
+no jargon:
 
-> Replaces your head with an animated animal and your room with a painted
-> scene, live in your webcam feed, for everyone on the call.
+> Wear an animal head on your video calls, with a painted scene instead of
+> your room. Everyone on the call sees it, not just you.
 
 A single brand name used in a sentence is ordinary and not what the spam policy
 targets — but after a keyword-spam rejection there is no reason to keep one in
@@ -56,33 +58,40 @@ round as any other package change rather than on its own.
 
 **Description:**
 
-> Critter Cam puts an animated animal head over yours in your webcam feed.
-> Because it works on the camera itself, everyone on the call sees it — not
-> just you.
+This field is read by people deciding whether to install, not by developers.
+Keep it in their language: what they will see and do, not how it is built. No
+file formats, no API names, no talk of rendering or tracking pipelines. The
+technical account belongs in the README.
+
+> Turn into an animal on your next video call.
 >
-> No virtual camera driver, no separate app, nothing to install outside Chrome.
+> Critter Cam puts an animated animal head over yours — and because it changes
+> the camera itself, everyone on the call sees it, not just you. There is
+> nothing to install but the extension.
 >
-> What it does
+> What you get
 >
-> • Real face tracking. The head follows your position, turns and tilts with
->   you, and its mouth, eyes and brows follow your own.
-> • Six characters to choose from, each textured and rigged, with a mouth that
->   opens onto a modelled interior when you speak.
-> • Bring your own. Drop a .glb model in and it appears in the picker.
-> • Seven painted scenes. Pick one and it replaces the camera picture entirely,
->   so all anyone sees is the animal head on the backdrop you chose — your room
->   never reaches the call.
-> • Entirely offline. Face tracking runs on your machine, no frame ever leaves
->   your computer, and the extension makes no network requests at all.
+> • Your face, its face. Look left and it looks left. Open your mouth and it
+>   opens its mouth — you can see right inside. Blink, smile, raise an eyebrow:
+>   it copies you.
+> • Six animals to choose from, from a big friendly ox to a wolf to a small
+>   bright-beaked bird.
+> • Seven painted backdrops. Pick one and your room disappears completely —
+>   all anyone sees is your animal against the scenery.
+> • Bring your own character. Have a 3D model you like? Drop it in and it turns
+>   up in the picker beside the others.
+> • Nothing leaves your computer. Your camera is handled entirely on your own
+>   machine. No uploads, no account, no sign-in — the extension never connects
+>   to the internet at all.
 >
-> How to use it
+> Getting started
 >
-> Open the preview from the toolbar, start your camera and pick a head. Adjust
-> the size and position until you are covered, then join your meeting — reload
-> the tab if it was already open, because the camera is hooked as a page loads.
+> Click the Critter Cam button, turn your camera on and pick an animal. Nudge
+> the size and position until it sits comfortably over your face, then join
+> your call. If the meeting tab was already open, refresh it first.
 >
-> Critter Cam runs only on the video-calling sites it declares, which Chrome
-> lists for you when you install it. It cannot see or act on any other site.
+> Critter Cam works only on video-calling sites, and Chrome shows you which
+> ones when you install it. It cannot see anything else you do.
 
 Do not list the supported sites by name here. A run of brand names reads as
 keyword stuffing to the store's spam review, whatever the intent behind it —
